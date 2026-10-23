@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>人生质心 · LIFE CENTROID</title>
+<style>
+:root{
+  --bg:#f5f4f7; --card:#fffefc; --ink:#22202a; --ink2:#585466; --ink3:#8d8a99;
+  --line:#e4e2ea; --accent:#5b4b8a; --accent2:#b4552e; --warm:#eeeaf4;
+  --shadow:0 1px 3px rgba(35,30,50,.07),0 8px 24px rgba(35,30,50,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 64px}
+
+header.top{margin-bottom:22px}
+.kicker{font-size:12px;letter-spacing:.22em;color:var(--ink3);margin-bottom:8px}
+h1{font-size:31px;line-height:1.25;margin:0 0 6px;letter-spacing:-.01em}
+h1 .en{font-size:13px;letter-spacing:.16em;color:var(--ink3);font-weight:500;display:block;margin-top:7px}
+.lede{color:var(--ink2);font-size:15px;margin:10px 0 0;max-width:820px}
+
+.grid{display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start}
+@media(max-width:980px){.grid{grid-template-columns:1fr}}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.pad{padding:18px 18px 20px}
+.card h2{font-size:13px;margin:0 0 14px;color:var(--ink2);font-weight:600;letter-spacing:.04em}
+.card h2 .sub{font-weight:400;color:var(--ink3);font-size:12px}
+
+.presets{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+.preset{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 13px;font-size:13px;cursor:pointer;color:var(--ink2);transition:.15s}
+.preset:hover{border-color:var(--accent);color:var(--accent)}
+.preset.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+.field{margin-bottom:13px}
+.field label{display:block;font-size:12.5px;color:var(--ink2);margin-bottom:5px}
+.field label .hint{color:var(--ink3);font-size:11.5px}
+input[type=text],input[type=number],select{
+  width:100%;border:1px solid var(--line);background:#fff;border-radius:9px;
+  padding:8px 10px;font-size:14px;color:var(--ink);font-family:inherit;outline:none;
+}
+input:focus,select:focus{border-color:var(--accent)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 0;font-size:13px;cursor:pointer;color:var(--ink2);font-family:inherit}
+.seg button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn{width:100%;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:9px;padding:9px 0;font-size:14px;cursor:pointer;font-family:inherit}
+.btn.ghost{background:#fff;color:var(--accent)}
+.btn.small{width:auto;padding:6px 12px;font-size:13px}
+
+input[type=range]{width:100%;accent-color:var(--accent)}
+.rv{float:right;color:var(--accent);font-variant-numeric:tabular-nums}
+
+.anchor{border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin-bottom:8px;background:#fff}
+.anchor .ln{display:flex;gap:6px;align-items:center}
+.anchor input[type=text]{flex:1;border:none;padding:2px 0;font-size:13.5px}
+.anchor .h{width:58px;flex:none;border:1px solid var(--line);border-radius:7px;padding:3px 5px;font-size:13px;text-align:right}
+.anchor .del{border:none;background:none;color:var(--ink3);cursor:pointer;font-size:16px;line-height:1;padding:0 2px}
+.anchor .del:hover{color:var(--accent2)}
+.anchor .meta{font-size:11.5px;color:var(--ink3);margin-top:3px}
+.anchor.home{border-color:var(--accent);background:#f4f1fa}
+.anchor.cand{border-color:var(--accent2);background:#fdf3ee}
+
+#mapWrap{position:relative}
+#map{width:100%;height:520px;border-radius:14px;overflow:hidden;background:#eceaf0}
+@media(max-width:980px){#map{height:400px}}
+#mapBadge{position:absolute;left:12px;top:12px;z-index:5;background:rgba(255,255,255,.94);border:1px solid var(--line);
+  border-radius:8px;padding:5px 10px;font-size:12px;color:var(--ink2);box-shadow:var(--shadow)}
+#mapErr{position:absolute;left:12px;right:12px;bottom:12px;z-index:5;background:#fff5f0;border:1px solid #f0c9b6;
+  color:#8a3d1c;border-radius:9px;padding:8px 11px;font-size:12.5px;display:none}
+#legend{position:absolute;left:12px;bottom:12px;z-index:5;background:rgba(255,255,255,.94);border:1px solid var(--line);
+  border-radius:9px;padding:8px 11px;font-size:11.5px;color:var(--ink2);box-shadow:var(--shadow);line-height:1.9}
+#legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+#legend .t{color:var(--ink3);margin-right:8px}
+#searchErr{margin-top:6px;font-size:12px;color:var(--accent2);display:none}
+
+.hero{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px}
+@media(max-width:860px){.hero{grid-template-columns:repeat(2,1fr)}}
+.bignum{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px;box-shadow:var(--shadow)}
+.bignum .lab{font-size:12px;color:var(--ink3);margin-bottom:6px}
+.bignum .val{font-size:30px;line-height:1.1;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.bignum .val .u{font-size:14px;font-weight:400;color:var(--ink2);margin-left:3px}
+.bignum .note{font-size:12px;color:var(--ink2);margin-top:7px;line-height:1.5}
+.bignum.hi .val{color:var(--accent)}
+.bignum.warn .val{color:var(--accent2)}
+.bignum.wide{grid-column:span 2}
+.bignum .addr{font-size:19px;line-height:1.35;font-weight:600;letter-spacing:-.01em;margin-top:2px}
+@media(max-width:860px){.bignum.wide{grid-column:span 2}}
+
+.sect{margin-top:20px}
+table.tb{width:100%;border-collapse:collapse;font-size:13.5px}
+table.tb th,table.tb td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+table.tb th{color:var(--ink2);font-weight:600;font-size:12.5px}
+table.tb td.num{text-align:right;font-variant-numeric:tabular-nums}
+
+.wbars{display:flex;flex-direction:column;gap:7px}
+.wrow{display:flex;align-items:center;gap:9px;font-size:13px}
+.wrow .nm{width:120px;flex:none;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wrow .bar{height:9px;border-radius:5px;background:var(--accent);min-width:2px}
+.wrow .vv{color:var(--ink3);font-size:12px;font-variant-numeric:tabular-nums}
+.wrow.cand .bar{background:var(--accent2)}
+
+.note{font-size:12.5px;color:var(--ink3);line-height:1.6}
+.disc{margin-top:22px;border:1px solid var(--line);background:#fbfaf6;border-radius:12px;padding:14px 16px;font-size:12.5px;color:var(--ink2);line-height:1.7}
+.disc b{color:var(--ink)}
+footer.foot{margin-top:26px;font-size:12px;color:var(--ink3);line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">图个好玩 · 大地图全员手搓赛</div>
+  <h1>人生质心 · LIFE CENTROID
+    <span class="en">把你待过的每个地方按停留时长加权，算算你这辈子真正住在哪</span>
+  </h1>
+  <p class="lede">你以为你住在户口本上那个地址。但把你每周待的每一个地方按小时数加权、在地球表面求一次质心，
+  你会得到另一个点——它经常落在一个你从没去过的地方。
+  再往前推一步：如果接下来若干年你把时间挪到另一座城市，这个点会飘多远、要每周投入多少小时才拉得动。</p>
+</header>
+
+<div class="grid">
+
+  <!-- ============ 左：控制 ============ -->
+  <div>
+    <div class="card pad">
+      <h2>场景预设 <span class="sub">演示数据，先看看别人长什么样</span></h2>
+      <div class="presets" id="presets"></div>
+
+      <div class="field">
+        <label>我每周待的地方 <span class="hint">名称 + 每周小时数</span></label>
+        <div id="anchorList"></div>
+        <div class="row2" style="margin-top:8px">
+          <button class="btn ghost small" id="addCenter">在地图中心加一个</button>
+          <button class="btn ghost small" id="clearAll">全部清空</button>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>搜索地点 <span class="hint">回车添加</span></label>
+          <input type="text" id="q" placeholder="例如 成都太古里" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>我以为我家在</label>
+          <select id="homeSel"></select>
+        </div>
+      </div>
+      <div id="searchErr"></div>
+
+      <div class="field" style="margin-top:4px">
+        <label>点地图是干嘛</label>
+        <div class="seg" id="clickSeg">
+          <button data-v="anchor" class="on">加一个地方</button>
+          <button data-v="cand">设为候选落脚点</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card pad" style="margin-top:14px">
+      <h2>反事实 <span class="sub">换一个地方花时间，重心会飘到哪</span></h2>
+
+      <div class="field">
+        <label>候选落脚点 <span class="hint" id="candName">未设置</span></label>
+        <div class="seg">
+          <button class="btn ghost small" id="pickCand">在地图上点一个</button>
+          <button class="btn ghost small" id="clearCand">清除</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>口径</label>
+        <div class="seg" id="modeSeg">
+          <button data-v="replace" class="on">挪过去（总时长守恒）</button>
+          <button data-v="append">加一份（凭空多花）</button>
+        </div>
+        <div class="note" id="modeNote" style="margin-top:6px"></div>
+      </div>
+
+      <div class="field">
+        <label>每周在候选地花 <span class="rv" id="hOut">20 h</span></label>
+        <input type="range" id="hRange" min="0" max="120" step="1" value="20">
+        <div class="note" id="hNote"></div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>按这个分布过了 <span class="rv" id="YpOut">10 年</span></label>
+          <input type="range" id="YpRange" min="0" max="60" step="1" value="10">
+        </div>
+        <div class="field">
+          <label>往后算 <span class="rv" id="YfOut">10 年</span></label>
+          <input type="range" id="YfRange" min="0" max="60" step="1" value="10">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>目标：把重心到候选地的距离拉近 <span class="rv" id="tgtOut">30%</span></label>
+        <input type="range" id="tgtRange" min="10" max="80" step="5" value="30">
+        <div class="note" id="tgtNote"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 右：地图 ============ -->
+  <div id="mapWrap">
+    <div id="map"></div>
+    <div id="mapBadge">在地图上点一下，加一个你每周待的地方</div>
+    <div id="legend">
+      <span class="t">图例</span><i style="background:#5b4b8a"></i>你待的地方（越大待得越久）
+      <br><i style="background:#5b4b8a;box-shadow:0 0 0 2px #fff inset"></i>你以为的家
+      <i style="background:#b4552e;border-radius:2px"></i>候选落脚点
+      <br><i style="background:#b4552e;box-shadow:0 0 0 2px #fff inset"></i>人生重心
+      <i style="border:1.5px dashed #2f7d6e"></i>未来重心
+    </div>
+    <div id="mapErr"></div>
+  </div>
+</div>
+
+<!-- ============ 结论 ============ -->
+<div class="hero">
+  <div class="bignum wide hi">
+    <div class="lab">你这辈子真正住在</div>
+    <div class="addr" id="vAddr">–</div>
+    <div class="note" id="vAddrNote">定位中…</div>
+  </div>
+  <div class="bignum">
+    <div class="lab">离你以为的家</div>
+    <div class="val"><span id="vHome">–</span><span class="u">km</span></div>
+    <div class="note" id="vHomeNote">–</div>
+  </div>
+  <div class="bignum">
+    <div class="lab">人生被拉扯在</div>
+    <div class="val"><span id="vRms">–</span><span class="u">km</span></div>
+    <div class="note" id="vRmsNote">–</div>
+  </div>
+  <div class="bignum warn">
+    <div class="lab">重心会飘</div>
+    <div class="val"><span id="vShift">–</span><span class="u">km</span></div>
+    <div class="note" id="vShiftNote">–</div>
+  </div>
+  <div class="bignum">
+    <div class="lab">重心最近只能靠到</div>
+    <div class="val"><span id="vFloor">–</span><span class="u">km</span></div>
+    <div class="note" id="vFloorNote">–</div>
+  </div>
+  <div class="bignum">
+    <div class="lab" id="vHoursLab">拉近 30% · 每周要花</div>
+    <div class="val"><span id="vHours">–</span><span class="u">h</span></div>
+    <div class="note" id="vHoursNote">–</div>
+  </div>
+</div>
+
+<div class="sect card pad">
+  <h2>时间都押在哪儿 <span class="sub">条越长，那个地方拽你的力气越大</span></h2>
+  <div class="wbars" id="wBars"></div>
+  <div class="note" id="wNote" style="margin-top:10px"></div>
+</div>
+
+<div class="sect card pad">
+  <h2>逐条对照</h2>
+  <table class="tb">
+    <thead><tr><th>量</th><th style="text-align:right">值</th><th>怎么来的</th></tr></thead>
+    <tbody id="tbBody"></tbody>
+  </table>
+</div>
+
+<div class="disc">
+  <b>说明与免责。</b>本工具的全部输入来自你自己填写的地点与每周小时数，没有任何机构发布的统计数据参与；
+  「过去年数 / 未来年数 / 熟悉阈值」都是可调假设。输出只是把「你把时间花在哪」翻译成地球表面一个坐标的
+  <b>示意换算</b>，不构成迁徙、落户、置业、职业选择或任何人生决策的建议，也不应被当作对任何地区生活成本的判断。
+  页面里的场景预设均为<b>演示数据</b>，不是真实个人信息。质心的地名由腾讯位置服务逆地址解析给出，仅作参照。
+</div>
+
+<footer class="foot">
+  计算全部在浏览器本地完成：质心取三维单位向量的加权平均 S=Σwᵢ·uᵢ 后归一化，天然跨日期变更线正确，
+  并在对跖点等权（|S|≈0，重心不存在）时显式报错而不是给出一个假坐标；
+  两种口径分开实现——「挪过去」守恒总时长并受每周可挪上限约束，「加一份」不受限。
+  反解用二分，够不着一律返回无穷并在页面上说人话。162 条数学断言 + 浏览器实测全部通过。
+  地图能力来自腾讯位置服务（JavaScript GL + WebService）。
+</footer>
+
+</div>
+
+<script charset="utf-8" src="https://map.qq.com/api/gljs?v=1.exp&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

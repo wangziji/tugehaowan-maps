@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>绳结 · THE KNOT —— 同一份待办清单，换个顺序，差多少</title>
+<script src="https://map.qq.com/api/gljs?v=1.exp&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#ffffff; --line:#e3e6ea; --ink:#1e2430; --ink2:#5b6472;
+    --accent:#1a73e8; --bad:#e8453c; --warn:#f08a24; --ok:#0f9d58; --soft:#eef2f7;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:14px; line-height:1.6;
+  }
+  .wrap{max-width:1240px;margin:0 auto;padding:18px 16px 40px}
+  header h1{font-size:21px;margin:0 0 4px;letter-spacing:.5px}
+  header .sub{color:var(--ink2);font-size:13px;margin-bottom:2px}
+  header .tag{display:inline-block;background:var(--soft);color:var(--ink2);font-size:12px;
+    padding:2px 8px;border-radius:10px;margin-right:6px;margin-top:6px}
+  .grid{display:grid;grid-template-columns:300px minmax(0,1fr);gap:14px;margin-top:14px}
+  @media (max-width:900px){ .grid{grid-template-columns:minmax(0,1fr)} }
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px}
+  .card h3{font-size:13px;margin:0 0 8px;color:var(--ink2);font-weight:600;letter-spacing:.3px}
+  .row{display:flex;flex-wrap:wrap;gap:6px}
+  button.chip{
+    border:1px solid var(--line);background:#fff;color:var(--ink2);border-radius:14px;
+    padding:4px 11px;font-size:12.5px;cursor:pointer;font-family:inherit;
+  }
+  button.chip:hover{border-color:#c6ccd4}
+  button.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .lbl{font-size:12px;color:var(--ink2);margin:10px 0 5px}
+  .lbl:first-child{margin-top:0}
+  label.cb{display:flex;align-items:center;gap:6px;font-size:13px;margin:5px 0;cursor:pointer}
+  label.cb input{width:15px;height:15px}
+  label.cb .k{color:var(--ink2);font-size:12px}
+  label.cb .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #map{width:100%;height:440px;border-radius:10px;border:1px solid var(--line);background:#eaeef2}
+  @media (max-width:900px){ #map{height:320px} }
+  .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
+  @media (max-width:640px){ .kpis{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  .kpi{background:var(--soft);border-radius:8px;padding:8px 10px}
+  .kpi .v{font-size:19px;font-weight:600;line-height:1.25}
+  .kpi .t{font-size:11.5px;color:var(--ink2)}
+  .kpi.best .v{color:var(--accent)} .kpi.worst .v{color:var(--bad)} .kpi.gain .v{color:var(--ok)}
+  .orderline{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font-size:13px;margin:4px 0}
+  .step{background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:12.5px}
+  .step.b{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .step.w{background:#fdeceb;color:var(--bad);border-color:#f6c9c5}
+  .step.g{background:#fff4e6;color:#b5651d;border-color:#f6d9b0}
+  .arrow{color:var(--ink2)}
+  .bars{margin-top:6px}
+  .bar{display:flex;align-items:center;gap:6px;height:17px;cursor:pointer}
+  .bar .lab{width:104px;font-size:11px;color:var(--ink2);text-align:right;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar .track{flex:1;min-width:0;background:#f0f2f5;border-radius:3px;height:11px;position:relative}
+  .bar .fill{height:11px;border-radius:3px;background:#c9d2dc}
+  .bar .num{width:56px;font-size:11px;color:var(--ink2)}
+  .bar.best .fill{background:var(--accent)} .bar.worst .fill{background:var(--bad)}
+  .bar.greedy .fill{background:var(--warn)} .bar.hot .fill{background:#8a94a2}
+  .bar.best .num,.bar.worst .num,.bar.greedy .num{color:var(--ink);font-weight:600}
+  table.cmp{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.cmp td,table.cmp th{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left}
+  table.cmp th{color:var(--ink2);font-weight:600}
+  table.cmp td.n{text-align:right;font-variant-numeric:tabular-nums}
+  .note{font-size:12px;color:var(--ink2);margin-top:8px;line-height:1.7}
+  .find{font-size:12.5px;color:var(--ink2);line-height:1.75}
+  .find b{color:var(--ink)}
+  .err{background:#fdeceb;color:#8c231c;border:1px solid #f6c9c5;border-radius:8px;padding:8px 10px;
+    font-size:12.5px;margin-top:8px;display:none}
+  .legend{font-size:11.5px;color:var(--ink2);margin-top:6px}
+  .legend i{display:inline-block;width:16px;height:3px;vertical-align:middle;margin:0 4px 2px 0;border-radius:2px}
+  footer{color:var(--ink2);font-size:12px;margin-top:18px;border-top:1px solid var(--line);padding-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>绳结 · THE KNOT</h1>
+    <div class="sub">同一份待办清单，24 种走法。最差的那种要多花 <b id="hSpread">—</b>，而你每天都在随手打一个结。</div>
+    <div>
+      <span class="tag">腾讯地图 JSAPI GL</span>
+      <span class="tag">8 城 × 32 个任务集 × 640 条真实驾车路线</span>
+      <span class="tag" id="hSets">—</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h3>选一组真实待办</h3>
+        <div class="lbl">城市</div>
+        <div class="row" id="cityRow"></div>
+        <div class="lbl">从哪儿出发</div>
+        <div class="row" id="anchorRow"></div>
+        <div class="lbl">今天要办的事（至少选 2 件）</div>
+        <div id="errandBox"></div>
+      </div>
+
+      <div class="card">
+        <h3>怎么走</h3>
+        <div class="lbl">最后回不回起点</div>
+        <div class="row">
+          <button class="chip on" id="btnOpen">办完就散</button>
+          <button class="chip" id="btnClosed">还要回家</button>
+        </div>
+        <div class="lbl">按什么算</div>
+        <div class="row">
+          <button class="chip on" id="btnTime">耗时</button>
+          <button class="chip" id="btnDist">里程</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>这套走法的账</h3>
+        <div class="kpis">
+          <div class="kpi best"><div class="v" id="kBest">—</div><div class="t">最快的一种</div></div>
+          <div class="kpi worst"><div class="v" id="kWorst">—</div><div class="t">最慢的一种</div></div>
+          <div class="kpi gain"><div class="v" id="kGain">—</div><div class="t">排对顺序省下</div></div>
+          <div class="kpi"><div class="v" id="kGreedy">—</div><div class="t">「就近贪心」多花</div></div>
+        </div>
+        <table class="cmp">
+          <tr><th>策略</th><th style="text-align:right">代价</th><th style="text-align:right">比最优多</th></tr>
+          <tr><td>最优顺序</td><td class="n" id="cBest">—</td><td class="n">—</td></tr>
+          <tr><td>最差顺序</td><td class="n" id="cWorst">—</td><td class="n" id="cWorstG">—</td></tr>
+          <tr><td>就近贪心（每步去最近的）</td><td class="n" id="cGreedy">—</td><td class="n" id="cGreedyG">—</td></tr>
+          <tr><td>由近到远</td><td class="n" id="cNF">—</td><td class="n" id="cNFG">—</td></tr>
+          <tr><td>由远到近（「先去最远的」）</td><td class="n" id="cFF">—</td><td class="n" id="cFFG">—</td></tr>
+          <tr><td>随便排一个（24 种平均）</td><td class="n" id="cMean">—</td><td class="n" id="cMeanG">—</td></tr>
+        </table>
+        <div class="note" id="knotNote">—</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="padding:10px">
+        <div id="map"></div>
+        <div class="legend">
+          <i style="background:#1a73e8"></i>最优　
+          <i style="background:#e8453c"></i>最差　
+          <i style="background:#f08a24"></i>就近贪心　
+          <i style="background:#c9d2dc"></i>其余走法（叠成绳结）
+        </div>
+        <div class="err" id="mapErr"></div>
+      </div>
+
+      <div class="card">
+        <h3>最优顺序</h3>
+        <div class="orderline" id="bestLine"></div>
+        <h3 style="margin-top:10px">最差顺序</h3>
+        <div class="orderline" id="worstLine"></div>
+      </div>
+
+      <div class="card">
+        <h3>全部 <span id="nOrders">24</span> 种走法，从快到慢（点一下看它长什么样）</h3>
+        <div class="bars" id="bars"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>这套数据说的事</h3>
+    <div class="find" id="findings"></div>
+  </div>
+
+  <footer>
+    数据：腾讯位置服务 driving 路线规划实测 640 条（2026-10-18，8 座城市 × 4 个出发点 × 5 个点两两有向路线，0 次失败）。
+    耗时为接口返回的典型路况分钟数（整分钟），里程为路网距离。示例数据，仅用于演示。
+  </footer>
+</div>
+
+<script src="data.js"></script>
+<script src="model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

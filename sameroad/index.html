@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>同路 · THE SAME ROAD —— 你的通勤里，有 40% 是别人的路</title>
+<style>
+  :root{
+    --bg:#0b1017;--panel:#131b26;--panel2:#0f1620;--line:#243141;
+    --txt:#e8eef6;--dim:#8fa3b8;--dim2:#61738a;
+    --brand:#ffd166;--blue:#3aa0ff;--pink:#ff5fb0;--green:#4ddb9a;--red:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
+    font-size:14px;line-height:1.7}
+  .head{padding:20px 22px 14px;border-bottom:1px solid var(--line)}
+  .head h1{font-size:22px;margin:0 0 6px;letter-spacing:.4px}
+  .head h1 em{font-style:normal;color:var(--brand)}
+  .head p{margin:0;color:var(--dim);font-size:13px;max-width:900px}
+  .main{display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:0;height:calc(100% - 96px)}
+  @media(max-width:900px){.main{grid-template-columns:minmax(0,1fr);height:auto}
+    #map{height:52vh !important}}
+  #map{width:100%;height:100%;min-height:320px;background:#0d141d}
+  .panel{overflow-y:auto;overflow-x:hidden;padding:16px 18px 40px;border-left:1px solid var(--line);
+    background:var(--panel2)}
+  @media(max-width:900px){.panel{border-left:none;border-top:1px solid var(--line);height:auto;overflow:visible}}
+  h2.sec{font-size:12px;letter-spacing:1.4px;color:var(--dim2);margin:20px 0 9px;
+    text-transform:uppercase;font-weight:600}
+  h2.sec:first-child{margin-top:0}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px}
+  .tabs button{background:#101922;border:1px solid var(--line);color:var(--dim);
+    border-radius:8px;padding:5px 10px;font-size:12.5px;cursor:pointer;font-family:inherit}
+  .tabs button.on{background:#2a2312;border-color:var(--brand);color:var(--brand)}
+  select{width:100%;background:#101922;border:1px solid var(--line);color:var(--txt);
+    border-radius:9px;padding:9px 10px;font-size:13px;font-family:inherit;margin-top:8px}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 12px}
+  .kpi b{display:block;font-size:21px;line-height:1.25;color:var(--brand);font-weight:600}
+  .kpi span{font-size:11.5px;color:var(--dim);display:block;margin-top:2px}
+  .kpi.blue b{color:var(--blue)} .kpi.pink b{color:var(--pink)} .kpi.green b{color:var(--green)}
+  .note{font-size:12px;color:var(--dim);margin:9px 0 0;line-height:1.65}
+  .note b{color:var(--txt);font-weight:600}
+  .plist{display:grid;gap:8px}
+  .pitem{background:var(--panel);border:1px solid var(--line);border-radius:11px;
+    padding:10px 12px;cursor:pointer;transition:.15s}
+  .pitem:hover{border-color:var(--dim2)}
+  .pitem.on{border-color:var(--blue);background:#131f2c}
+  .pitem .r1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .pitem .nm{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pitem .ov{font-size:15px;color:var(--blue);font-weight:600;flex:0 0 auto}
+  .pitem .r2{font-size:11.5px;color:var(--dim);margin-top:2px}
+  table.led{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+  table.led th,table.led td{border-bottom:1px solid var(--line);padding:6px 4px;text-align:right}
+  table.led th:first-child,table.led td:first-child{text-align:left;color:var(--dim);font-weight:400}
+  table.led thead th{color:var(--dim2);font-weight:600;font-size:11.5px}
+  table.led td.hi{color:var(--brand);font-weight:600}
+  .verdict{margin-top:11px;padding:10px 12px;border-radius:10px;font-size:12.5px;line-height:1.7;
+    border:1px solid var(--line);background:var(--panel)}
+  .verdict b{color:var(--brand)}
+  .slider{margin-top:10px}
+  .slider label{display:flex;justify-content:space-between;font-size:11.5px;color:var(--dim);margin-bottom:3px}
+  .slider label b{color:var(--txt)}
+  .slider input{width:100%;accent-color:var(--brand)}
+  svg.chart{width:100%;height:auto;display:block;margin-top:6px;overflow:visible}
+  .foot{padding:14px 22px 26px;border-top:1px solid var(--line);color:var(--dim2);font-size:11.5px;
+    line-height:1.75}
+  .foot b{color:var(--dim)}
+  .err{background:#3a1418;border:1px solid #6b2230;color:#ffb3b3;padding:9px 12px;border-radius:9px;
+    font-size:12.5px;margin-top:10px}
+  .demo{display:inline-block;font-size:10.5px;padding:1px 6px;border-radius:4px;
+    background:#2a2312;color:var(--brand);border:1px solid #4a3c18;margin-left:6px}
+</style>
+</head>
+<body>
+<div class="head">
+  <h1>同路 · <em>THE SAME ROAD</em> —— 你的通勤里，有 <span id="hl-core">—</span> 是别人的路</h1>
+  <p>每座城市取 12 条「进城通勤」+ 2 条「横向通勤」，用真实驾车路网两两比对：你和谁走在同一个 150 米的格子里，
+     重合率有多高，以及——一旦你们拼同一辆车，这笔账怎么算。<span class="demo">演示数据</span></p>
+</div>
+
+<div class="main">
+  <div id="map"></div>
+  <div class="panel">
+    <h2 class="sec">城市</h2>
+    <div class="tabs" id="tabs"></div>
+
+    <h2 class="sec">选一条像你的通勤</h2>
+    <select id="sel-route"></select>
+    <div class="note" id="route-desc"></div>
+
+    <h2 class="sec">你的大众指数</h2>
+    <div class="kpis" id="kpis"></div>
+    <div class="note" id="pop-note"></div>
+
+    <h2 class="sec">越靠近市中心，你越不像你自己</h2>
+    <svg class="chart" id="chart-profile" viewBox="0 0 400 130" preserveAspectRatio="none"></svg>
+    <div class="note" id="prof-note"></div>
+
+    <h2 class="sec">和你最顺路的三个人</h2>
+    <div class="plist" id="plist"></div>
+    <div class="note" id="partner-note"></div>
+
+    <h2 class="sec">拼车这笔账</h2>
+    <table class="led" id="ledger"></table>
+    <div class="verdict" id="verdict"></div>
+    <div class="slider">
+      <label><span>每公里车费</span><b id="v-rate">2.5 元/km</b></label>
+      <input type="range" id="in-rate" min="1.2" max="4" step="0.1" value="2.5">
+    </div>
+    <div class="slider">
+      <label><span>你的一分钟值多少钱</span><b id="v-min">0.6 元/分钟</b></label>
+      <input type="range" id="in-min" min="0" max="3" step="0.1" value="0.6">
+    </div>
+    <table class="led" id="settle"></table>
+    <div class="note" id="settle-note"></div>
+
+    <h2 class="sec">顺路度预测不了你多花多久</h2>
+    <svg class="chart" id="chart-scatter" viewBox="0 0 400 190" preserveAspectRatio="none"></svg>
+    <div class="note" id="scatter-note"></div>
+
+    <h2 class="sec">这座城市的通勤主动脉</h2>
+    <div class="note" id="artery-note"></div>
+
+    <div id="errbox"></div>
+  </div>
+</div>
+
+<div class="foot">
+  <b>数据说明</b>：8 座城市 × 14 条真实驾车路线，路线、里程、时长来自腾讯位置服务 WebService 于 2026-10-18 实测（584 次调用，0 失败）。
+  起点为以城市中心锚点为圆心、按方位与距离生成的<b>采样点</b>（再用逆地理编码取最近 POI 名称），不是真实住址；
+  终点为城市中心地标。「拼车账」只在两条进城线之间计算（终点相同），车费与时间单价为可调的<b>演示参数</b>，
+  不构成任何定价或运营建议。<br>
+  <b>口径</b>：重合率 = 两条线共同走过的里程 ÷ 两条线总里程（150 米规则网格，对称口径）。
+  驾车时长含典型路况；演示，不作为导航依据。
+</div>
+
+<script src="https://map.qq.com/api/gljs?v=1.exp&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<script src="./data.js"></script>
+<script src="./model.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

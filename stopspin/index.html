@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>停转之日 · DAY THE EARTH STOOD STILL —— 让地球停止自转，海水会退到哪里</title>
+<meta name="description" content="拖动「自转速度」滑块让地球刹车：海水沿等势面重新分配，两极涨起近 7 公里、赤道退下 4 公里多，今天 1.49 亿平方公里的陆地有 4 成沉没，同时从海底升起 5900 万平方公里的新大陆。">
+<script src="https://map.qq.com/api/gljs?v=1.exp&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<style>
+  :root{
+    --bg:#060a12; --bg2:#0c1424; --panel:#101c30; --line:#1d2c46;
+    --txt:#e9eff8; --dim:#93a6c3; --dim2:#65799a;
+    --sea:#3aa0e8; --newland:#e8b463; --cyan:#3ad6f5; --mag:#ff6fb0; --warn:#ff8a5c;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1160px;margin:0 auto;padding:20px 16px 56px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px}
+
+  header.top{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;justify-content:space-between;margin-bottom:14px}
+  .brand{font-size:25px;font-weight:800;letter-spacing:.4px;line-height:1.15}
+  .brand small{display:block;font-size:11.5px;font-weight:600;color:var(--cyan);letter-spacing:3px;margin-top:5px}
+  .oneline{font-size:13px;color:var(--dim);max-width:540px;line-height:1.65}
+
+  .hero{padding:10px;margin-bottom:14px;overflow:hidden}
+  #tmap{width:100%;height:460px;border-radius:10px;background:#081020}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;padding:10px 6px 2px;font-size:12px;color:var(--dim)}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  .views{display:flex;flex-wrap:wrap;gap:7px;padding:8px 6px 4px}
+  button{background:#16263f;border:1px solid var(--line);color:var(--txt);border-radius:8px;
+    padding:7px 11px;font-size:12.5px;cursor:pointer;transition:.15s}
+  button:hover{border-color:var(--cyan);color:var(--cyan)}
+  button.on{border-color:var(--cyan);color:var(--cyan);background:#0e2436}
+  .mapfail{display:none;padding:22px;font-size:13px;color:var(--dim);line-height:1.7}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  .sec{padding:15px}
+  .sec h3{margin:0 0 10px;font-size:12.5px;font-weight:700;color:var(--dim);letter-spacing:1.2px}
+
+  .sliderrow{display:flex;align-items:center;gap:12px;margin:4px 0 12px}
+  input[type=range]{flex:1;-webkit-appearance:none;height:6px;border-radius:3px;
+    background:linear-gradient(90deg,#1d4a6b,#3aa0e8);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+    background:#e9eff8;border:3px solid #3aa0e8;cursor:pointer}
+  .kval{font-size:22px;font-weight:800;min-width:96px;text-align:right;font-variant-numeric:tabular-nums}
+
+  .nums{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+  .num{background:#0b1524;border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+  .num b{display:block;font-size:18px;font-weight:800;line-height:1.3;font-variant-numeric:tabular-nums}
+  .num span{font-size:11.5px;color:var(--dim2)}
+  .num.sea b{color:var(--sea)} .num.new b{color:var(--newland)} .num.cy b{color:var(--cyan)}
+
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:900px){.split{grid-template-columns:1fr}}
+  canvas.chart{width:100%;height:auto;display:block;border-radius:8px;background:#0b1524}
+  .cap{font-size:11.5px;color:var(--dim2);line-height:1.6;margin-top:8px}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--dim2);font-weight:600;font-size:11.5px}
+  tbody tr{cursor:pointer}
+  tbody tr:hover{background:#16263f}
+  .tag{display:inline-block;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:700}
+  .tag.wet{background:#123a5c;color:#7cc8ff}
+  .tag.dry{background:#3d2f14;color:#f0c78a}
+
+  .note{font-size:12px;color:var(--dim2);line-height:1.85;margin-top:14px;padding:14px;
+    border:1px dashed var(--line);border-radius:12px}
+  .note b{color:var(--dim)}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:12.5px;margin-top:8px}
+  .kv dt{color:var(--dim2);white-space:nowrap}
+  .kv dd{margin:0;font-variant-numeric:tabular-nums}
+  .loading{padding:40px;text-align:center;color:var(--dim);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">停转之日 · DAY THE EARTH STOOD STILL
+      <small>让地球刹车，海水会退到哪里</small>
+    </div>
+    <div class="oneline">海面永远是一个等势面。地球一旦不转，那个面就从「被离心力吹鼓的扁球」变回「只剩引力塑造的形状」——
+      于是海水整体向两极迁移。拖下面的滑块，看它搬到哪里去。</div>
+  </header>
+
+  <div class="card hero">
+    <div id="tmap"></div>
+    <div class="mapfail" id="mapfail">地图加载失败。本作品的海陆计算全部在浏览器本地完成（内置全球 0.5° 高程栅格），
+      底图只用于对照；若底图不可用，右侧数字、剖面图与城市表格仍然有效。</div>
+    <div class="views">
+      <button data-view="china" class="on">中国</button>
+      <button data-view="east">东亚</button>
+      <button data-view="world">全球</button>
+      <button data-view="arctic">北极</button>
+      <button data-view="equator">赤道带</button>
+      <button id="btnBrake">▶ 一键刹车（100% → 0）</button>
+    </div>
+    <div class="legend">
+      <span><i style="background:#3aa0e8"></i>今天陆地 → 停转后海底（沉没）</span>
+      <span><i style="background:#e8b463"></i>今天海底 → 停转后陆地（新生）</span>
+      <span><i style="background:transparent;border:1px solid #65799a"></i>不变（仍是海 / 仍是陆）</span>
+    </div>
+    <div id="ptInfo" style="padding:8px 6px 2px;font-size:12.5px;color:var(--dim);line-height:1.7"></div>
+  </div>
+
+  <div class="grid">
+    <div class="card sec">
+      <h3>自转速度</h3>
+      <div class="sliderrow">
+        <input type="range" id="krange" min="0" max="100" value="100" step="1">
+        <div class="kval" id="kval">100%</div>
+      </div>
+      <div class="nums">
+        <div class="num sea"><b id="nEq">0 m</b><span>赤道海平面变化</span></div>
+        <div class="num sea"><b id="nPole">0 m</b><span>两极海平面变化</span></div>
+        <div class="num cy"><b id="nCrit">—</b><span>新的海岸线落在纬度</span></div>
+        <div class="num cy"><b id="nDrop">11 027 m</b><span>两极与赤道的海面落差</span></div>
+        <div class="num new"><b id="nLand">149.6 Mm²</b><span>停转后陆地总面积</span></div>
+        <div class="num"><b id="nCen">37.2°</b><span>陆地重心所在纬度</span></div>
+      </div>
+      <div class="kv" style="margin-top:12px">
+        <dt>沉没的今日陆地</dt><dd id="nDrown">0</dd>
+        <dt>升起的新陆地</dt><dd id="nNew">0</dd>
+        <dt>幸存的今日陆地</dt><dd id="nSurv">149.6</dd>
+      </div>
+      <div class="cap">单位 Mm² = 百万平方公里。地球表面积 510 Mm²，今天陆地 149.6 Mm²。</div>
+    </div>
+
+    <div class="card sec">
+      <h3>沿 116°E 的剖面（从北极到南极）</h3>
+      <canvas class="chart" id="prof" width="1000" height="420"></canvas>
+      <div class="cap">灰面是今天的地表（陆地凸起 / 海底凹陷），蓝线是停转后的海面。
+        两条曲线之间的差距，就是海水要走的距离。</div>
+      <div style="margin-top:14px">
+        <h3>陆地总面积 vs 自转速度</h3>
+        <canvas class="chart" id="curve" width="1000" height="300"></canvas>
+        <div class="cap">注意这条线不是单调的：刹车到约 <b id="nMinK">66%</b> 时陆地最少（<b id="nMinL">114.3 Mm²</b>），
+          再往下反而回升——因为赤道附近的海退得足够多，大片海底露了出来。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card sec" style="margin-top:14px">
+    <h3>点任意一行，看那座城市会不会沉（点地图任意位置也可以）</h3>
+    <table>
+      <thead><tr><th>城市</th><th>纬度</th><th>今天海拔</th><th>今天</th><th id="thNow">当前自转下</th><th>水深 / 海拔</th></tr></thead>
+      <tbody id="cityBody"></tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <b>这是一个思想实验，不是预报。</b>模型假设：固体地球形状在刹车瞬间冻结不变（真实的岩石回弹要以万年计），
+    海水足够快地重新分布到新的等势面上，水量守恒，忽略潮汐、大气压、月球引力与海水压缩性。
+    高程数据来自 AWS Terrarium 全球地形瓦片，重采样为 0.5° 网格后内置在页面里，全部计算在浏览器本地完成；
+    因此 0.5°（约 55 公里）以下的细节不可靠，海岸线位置是量级正确的示意，不能用于任何实际用途。
+    地球当然不会突然停下——它每天都在变慢，大约每世纪 1.8 毫秒，按这个速度要 4×10¹⁵ 年才停得下来。
+  </div>
+
+</div>
+
+<script src="terrain.js"></script>
+<script src="data.js"></script>
+<script src="model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

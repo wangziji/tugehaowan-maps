@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>对岸 · THE OTHER SIDE</title>
+<style>
+:root{
+  --bg:#0b1017; --panel:#131b26; --panel2:#182231; --line:#243141;
+  --txt:#e8eef6; --dim:#93a7bd; --dim2:#61738a;
+  --brand:#ffd166; --blue:#3aa0ff; --green:#4dd4ac; --red:#ff6b6b; --gray:#5b6b80;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
+  line-height:1.65;-webkit-font-smoothing:antialiased}
+.w{max-width:920px;margin:0 auto;padding:34px 18px 70px}
+h1{font-size:27px;margin:0 0 6px;letter-spacing:.4px}
+h1 em{font-style:normal;color:var(--brand)}
+.sub{color:var(--dim);font-size:14px;margin:0 0 4px}
+.lead{color:#c3d2e2;font-size:14.5px;margin:14px 0 0;
+  border-left:3px solid var(--brand);padding-left:12px}
+.lead b{color:var(--brand)}
+.meta{color:var(--dim2);font-size:12px;margin:12px 0 26px}
+h2{font-size:16px;margin:30px 0 12px;color:#dbe6f2}
+h2 span{color:var(--dim2);font-size:12px;font-weight:400;margin-left:8px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{background:var(--panel2);border:1px solid var(--line);color:var(--dim);
+  border-radius:8px;padding:5px 11px;font-size:13px;cursor:pointer;user-select:none}
+.chip:hover{border-color:var(--dim2)}
+.chip.on{background:#2c2410;border-color:var(--brand);color:var(--brand);font-weight:700}
+label.fld{font-size:12px;color:var(--dim2);margin-right:6px}
+select{background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+  border-radius:8px;padding:6px 9px;font-size:13px;max-width:100%}
+input[type=range]{width:100%;accent-color:var(--brand);margin:6px 0 0}
+.slab{display:flex;justify-content:space-between;font-size:12.5px;color:var(--dim)}
+.slab b{color:var(--brand);font-size:15px}
+.kpis{display:grid;gap:12px;margin-top:16px}
+@media(min-width:680px){.kpis{grid-template-columns:repeat(4,1fr)}}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 13px}
+.kpi .k{font-size:11.5px;color:var(--dim2)}
+.kpi .v{font-size:21px;font-weight:700;margin-top:3px;letter-spacing:.3px}
+.kpi .u{font-size:11.5px;color:var(--dim);font-weight:400;margin-left:3px}
+.kpi.hl{border-color:var(--brand);background:#241d0e}
+.decision{margin-top:12px;background:#141d2a;border:1px solid var(--line);
+  border-left:3px solid var(--brand);border-radius:10px;padding:13px 15px;font-size:14.5px}
+.decision b{color:var(--brand)}
+.decision .alt{color:var(--dim);font-size:13px;display:block;margin-top:5px}
+.grid2{display:grid;gap:14px;margin-top:14px}
+@media(min-width:760px){.grid2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.grid2>div{min-width:0;overflow:hidden}
+#map{width:100%;height:430px;border-radius:12px;border:1px solid var(--line);margin-top:14px;background:#0e1520}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin-top:10px}
+.legend i{display:inline-block;width:16px;height:4px;border-radius:2px;margin-right:5px;vertical-align:middle}
+#mapmsg{font-size:12px;color:var(--dim2);margin-top:8px;min-height:18px}
+.bars{margin-top:6px}
+.bar{margin-bottom:10px;cursor:pointer}
+.bar .hd{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;gap:8px}
+.bar .hd .nm{font-weight:700;white-space:nowrap}
+.bar .hd .tt{color:var(--dim);font-size:12.5px;white-space:nowrap}
+.bar .hd .tt b{color:var(--txt);font-size:14px}
+.track{position:relative;height:22px;border-radius:6px;overflow:hidden;background:#0e1520;border:1px solid var(--line)}
+.seg{position:absolute;left:0;top:0;height:100%}
+.bar.best .track{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+.bar.worst .track{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
+.bar.on .hd .nm{color:var(--blue)}
+.bar.best .hd .nm{color:var(--brand)}
+.bar.worst .hd .nm{color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--dim2);font-weight:600;font-size:12px}
+td b{color:var(--brand)}
+.note{color:var(--dim2);font-size:12px;margin-top:10px;line-height:1.7}
+.foot{color:var(--dim2);font-size:12px;margin-top:34px;border-top:1px solid var(--line);padding-top:14px;line-height:1.8}
+.foot b{color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="w">
+  <h1>对岸 · <em>THE OTHER SIDE</em></h1>
+  <p class="sub">城市里最近的一段路，单价最贵。</p>
+  <p class="lead">你站在离一家店 <b>60 米</b>的地方，看得见招牌。但要走到它门口，
+     最贵的那个方向得走 <b id="leadWorst">—</b>，最便宜的方向只要 <b id="leadBest">—</b>。
+     差的这一段不是距离，是<b>过一条街</b>——它是一笔固定费用，跟你离得多远几乎无关。
+     所以越近，亏得越狠。</p>
+  <p class="meta" id="metaLine">—</p>
+
+  <div class="kpis">
+    <div class="kpi hl"><div class="k">离目标 60 米，最贵方位</div>
+      <div class="v"><span id="k1">—</span><span class="u">米</span></div></div>
+    <div class="kpi"><div class="k">同一距离，最便宜方位</div>
+      <div class="v"><span id="k2">—</span><span class="u">米</span></div></div>
+    <div class="kpi"><div class="k">选错这一边，多走</div>
+      <div class="v"><span id="k3">—</span><span class="u">米</span></div></div>
+    <div class="kpi"><div class="k">60 米档单价 ÷ 240 米档</div>
+      <div class="v"><span id="k4">—</span><span class="u">倍</span></div></div>
+  </div>
+
+  <h2>① 同一家店，八个方向走过来<span>点一条，看它绕到了哪</span></h2>
+  <div class="panel">
+    <div class="row">
+      <label class="fld">城市</label><span id="cityChips" class="row" style="gap:6px"></span>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label class="fld">目的地</label>
+      <select id="poiSel"></select>
+      <label class="fld" style="margin-left:10px">你离它</label>
+      <span id="dChips" class="row" style="gap:6px"></span>
+    </div>
+    <div id="map"></div>
+    <div class="legend">
+      <span><i style="background:#4dd4ac"></i>几乎直着走</span>
+      <span><i style="background:#ffd166"></i>绕了一截</span>
+      <span><i style="background:#ff6b6b"></i>得先走远再折回</span>
+    </div>
+    <div id="mapmsg"></div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h2 style="margin-top:0">② 八条路的实际长度<span>直线都一样</span></h2>
+      <div class="bars" id="bars"></div>
+      <div class="note" id="barNote"></div>
+    </div>
+    <div class="panel">
+      <h2 style="margin-top:0">③ 八座城市，过一次街多少钱</h2>
+      <table id="cityTable"></table>
+      <div class="note" id="cityNote"></div>
+    </div>
+  </div>
+
+  <h2>④ 你这一次，该从哪一边过去<span>拖一下</span></h2>
+  <div class="panel">
+    <div class="slab"><span>我离目的地 <b id="dVal">60</b> 米</span><span id="cityVal"></span></div>
+    <input type="range" id="dRange" min="20" max="600" step="10" value="60">
+    <div class="decision" id="decision">—</div>
+    <div class="row" style="margin-top:10px">
+      <label class="fld">城市</label><span id="cityChips2" class="row" style="gap:6px"></span>
+    </div>
+    <div class="note">
+      估算方式：同城实测的两个距离档（60 米 / 240 米）之间线性插值，超出区间按比例外推。
+      这里的「最贵方位 / 最便宜方位」是同城同距离档的<b>中位数</b>，不是某一家的具体路线。
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>数据</b>：<span id="footData">—</span><br>
+    <b>怎么算的</b>：以每家店为圆心，在正北 / 东北 / 东 … 八个方位上取 60 米与 240 米外的起点，
+    用腾讯位置服务步行路线规划真实走一遍，记录实际步行距离与轨迹。
+    「最贵方位」= 八个方向里走得最远的那个；「过街费」= 最贵与最便宜之差。<br>
+    <b>为什么要剔除一些样本</b>：少数店铺位于商场或封闭街区内部，步行终点只能落在最近的可步行点，
+    这类点的「直线距离」是假的，已整点剔除。<br>
+    <b>边界</b>：结论是 2026-10-19 凌晨一次快照下的统计规律，只对所选 8 城、临街便利店 / 超市这类目的地成立；
+    主干道、快速路、铁路与河流两侧的差异会更大。不作为导航依据。
+  </div>
+</div>
+
+<script src="https://map.qq.com/api/gljs?v=1.exp&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<script src="./data.js"></script>
+<script src="./model.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

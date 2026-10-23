@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>时间价签 · PRICE OF A MINUTE</title>
+<style>
+:root{
+  --bg:#0b1017; --panel:#131b26; --panel2:#182231; --line:#243141;
+  --txt:#e8eef6; --dim:#93a7bd; --dim2:#61738a;
+  --brand:#ffd166; --blue:#3aa0ff; --green:#4dd4ac; --red:#ff6b6b; --pink:#ff5fb0;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
+  line-height:1.65;-webkit-font-smoothing:antialiased}
+.w{max-width:900px;margin:0 auto;padding:34px 18px 70px}
+h1{font-size:27px;margin:0 0 6px;letter-spacing:.4px}
+h1 em{font-style:normal;color:var(--brand)}
+.sub{color:var(--dim);font-size:14px;margin:0 0 4px}
+.lead{color:#c3d2e2;font-size:14.5px;margin:14px 0 0;
+  border-left:3px solid var(--brand);padding-left:12px}
+.head{font-size:15px;margin:10px 0 0;color:#f0e6cf;line-height:1.75}
+.head b{color:var(--brand)}
+.meta{color:var(--dim2);font-size:12px;margin:12px 0 26px}
+h2{font-size:16px;margin:30px 0 12px;color:#dbe6f2}
+h2 span{color:var(--dim2);font-size:12px;font-weight:400;margin-left:8px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{background:var(--panel2);border:1px solid var(--line);color:var(--dim);
+  border-radius:8px;padding:5px 11px;font-size:13px;cursor:pointer;user-select:none}
+.chip:hover{border-color:var(--dim2)}
+.chip.on{background:#2c2410;border-color:var(--brand);color:var(--brand);font-weight:700}
+label.fld{font-size:12px;color:var(--dim2);margin-right:6px}
+select{background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+  border-radius:8px;padding:6px 9px;font-size:13px;max-width:100%}
+input[type=range]{width:100%;accent-color:var(--brand);margin:6px 0 0}
+.sliderwrap{margin-top:14px}
+.slab{display:flex;justify-content:space-between;font-size:12.5px;color:var(--dim)}
+.slab b{color:var(--brand);font-size:15px}
+.kpis{display:grid;gap:12px;margin-top:16px}
+@media(min-width:640px){.kpis{grid-template-columns:repeat(4,1fr)}}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 13px}
+.kpi .k{font-size:11.5px;color:var(--dim2)}
+.kpi .v{font-size:21px;font-weight:700;margin-top:3px;letter-spacing:.3px}
+.kpi .u{font-size:11.5px;color:var(--dim);font-weight:400;margin-left:3px}
+.kpi.hl{border-color:var(--brand);background:#241d0e}
+.yearline{margin-top:14px;font-size:13.5px;color:#c9d6e5;
+  background:#101a16;border:1px solid #1e3a30;border-radius:10px;padding:11px 14px}
+.yearline b{color:var(--green);font-size:16px;margin:0 2px}
+.decision{margin-top:12px;background:#141d2a;border:1px solid var(--line);
+  border-left:3px solid var(--brand);border-radius:10px;padding:13px 15px;font-size:14.5px}
+.decision b{color:var(--brand)}
+.decision .alt{color:var(--dim);font-size:13px;display:block;margin-top:5px}
+
+/* 成本条 */
+.bars{margin-top:16px}
+.bar{margin-bottom:13px}
+.bar .hd{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+.bar .hd .nm{font-weight:700}
+.bar .hd .nm i{font-style:normal;color:var(--dim2);font-weight:400;font-size:11.5px;margin-left:6px}
+.bar .hd .tt{color:var(--dim);font-size:12.5px}
+.bar .hd .tt b{color:var(--txt);font-size:14px}
+.track{display:flex;height:26px;border-radius:7px;overflow:hidden;background:#0e1520;border:1px solid var(--line)}
+.seg{height:100%;display:flex;align-items:center;justify-content:flex-end;
+  padding-right:6px;font-size:11.5px;color:#0b1017;font-weight:700;white-space:nowrap;overflow:hidden}
+.seg.money{background:var(--brand)}
+.seg.time{background:var(--blue);color:#06121f}
+.bar.best .track{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+.bar.best .hd .nm{color:var(--brand)}
+.bar.gone{opacity:.42}
+.bar.gone .hd .nm{text-decoration:line-through;color:var(--dim2)}
+.bar .note{font-size:11.5px;color:var(--dim2);margin-top:4px}
+
+/* 地图 */
+#map{width:100%;height:400px;border-radius:12px;border:1px solid var(--line);margin-top:12px;background:#0e1520}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin-top:10px}
+.legend i{display:inline-block;width:16px;height:4px;border-radius:2px;margin-right:5px;vertical-align:middle}
+#mapmsg{font-size:12px;color:var(--dim2);margin-top:8px;min-height:18px}
+
+/* 排行 */
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+th,td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--dim2);font-weight:500;font-size:12px}
+td.rk{color:var(--brand);font-weight:700}
+.sml{font-size:12px;color:var(--dim2)}
+.foot{margin-top:34px;font-size:12px;color:var(--dim2);line-height:1.8;
+  border-top:1px solid var(--line);padding-top:14px}
+.foot b{color:var(--dim)}
+.warn{margin-top:14px;background:#1b1418;border:1px solid #3d2029;border-radius:10px;
+  padding:11px 13px;font-size:12.5px;color:#d8b6bf}
+</style>
+</head>
+<body>
+<div class="w">
+  <h1>时间价签 · <em>PRICE OF A MINUTE</em></h1>
+  <p class="sub">你的通勤方式，正在给自己的每一分钟标价。</p>
+  <p class="lead">同一段路，快的方式贵、慢的方式便宜。「慢下来省下的钱 ÷ 多花的时间」就是你给自己的时间开的价。
+     把这个数字和你的真实时薪放在一起，该打车还是该坐地铁，答案就出来了 —— 不用再凭感觉。</p>
+  <p class="head" id="headline">—</p>
+  <p class="meta">作者：markzwang（王紫骥）　|　8 城 × 68 条真实通勤　|　数据：腾讯位置服务（驾车 / 公交地铁 / 骑行路线规划）</p>
+
+  <div class="panel">
+    <div class="row" id="cityChips"></div>
+    <div class="row" style="margin-top:12px">
+      <label class="fld" for="odSel">通勤</label>
+      <select id="odSel"></select>
+    </div>
+    <div class="sliderwrap">
+      <div class="slab"><span>你的时薪</span><span><b id="hourlyVal">60</b> 元 / 小时</span></div>
+      <input type="range" id="hourly" min="0" max="400" step="5" value="60">
+      <div class="slab sml" style="margin-top:2px"><span>0（时间不值钱）</span><span>400</span></div>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi hl"><div class="k">这段路你应该</div><div class="v" id="kBest">—</div></div>
+    <div class="kpi"><div class="k">真实总成本</div><div class="v" id="kTotal">—<span class="u">元</span></div></div>
+    <div class="kpi"><div class="k">其中花的钱</div><div class="v" id="kMoney">—<span class="u">元</span></div></div>
+    <div class="kpi"><div class="k">其中时间折价</div><div class="v" id="kTime">—<span class="u">元</span></div></div>
+  </div>
+
+  <div class="yearline" id="yearline">按一年 250 个工作日、每天往返两趟算，若选到总成本最高的那一档，一年要多花
+    <b id="kYear">—</b> 元。</div>
+
+  <div class="decision" id="decision">—</div>
+
+  <h2>三种走法，各自的总成本<span>钱 + 时间 × 你的时薪</span></h2>
+  <div class="bars" id="bars"></div>
+
+  <h2>这三种走法，走的根本不是同一条路<span>腾讯地图路线规划实测</span></h2>
+  <div id="map"></div>
+  <div class="legend">
+    <span><i style="background:#ffd166"></i>打车</span>
+    <span><i style="background:#3aa0ff"></i>公交地铁</span>
+    <span><i style="background:#4dd4ac"></i>骑行</span>
+  </div>
+  <div id="mapmsg"></div>
+
+  <h2>八座城市，给你的一小时开价差多少<span>临界时薪：超过它，才值得升档</span></h2>
+  <table id="rank">
+    <thead><tr><th>城市</th><th>骑行 → 公交</th><th>公交 → 打车</th><th>倍差</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <p class="sml" id="rankNote"></p>
+
+  <h2>反常识的地方</h2>
+  <div class="panel" id="findings"></div>
+
+  <div class="warn">演示数据说明：打车费按各城市网约车快车公开价目量级建模（起步价 + 里程费 + 时长费），
+    不是任何平台的实际报价；公交地铁票价取自路线规划返回的真实票价；骑行按共享单车单次 1.5 元计；
+    打车时间另计 3 分钟平均等车。全部结论只用于横向比较与决策演示，不作为出行承诺或费用依据。</div>
+
+  <div class="foot">
+    <b>数据来源</b>：腾讯位置服务 WebService —— direction/v1/driving、/transit、/bicycling 三种路线规划，
+    68 条真实通勤 OD（8 城 × 每城 8–12 条，起终点均为真实地铁站），共 204 次路线调用，0 失败。<br>
+    <b>方法</b>：对每个 OD 取三档方案（钱，时间），剔除被支配的档；相邻档之间的临界时薪
+    R* = 60 × Δ钱 / Δ时间（元/小时）。你的时薪高于 R*，升档就划算；低于 R*，慢一点更值。<br>
+    <b>边界</b>：省时不足 5 分钟的升档不给出临界时薪 —— 耗时是整分钟量化的，Δt 越小比值越不可信，宁可不给数字。
+  </div>
+</div>
+
+<script src="https://map.qq.com/api/gljs?v=1.exp&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<script src="./data.js"></script>
+<script src="./model.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

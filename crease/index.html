@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>折痕 · THE CREASE —— 把地图沿两个人中间对折，折痕从来不在中间</title>
+<script src="https://map.qq.com/api/gljs?v=1.exp&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<style>
+  :root{
+    --bg:#f5f7fa; --card:#ffffff; --ink:#1e2430; --ink2:#5a6577; --ink3:#8b95a6;
+    --line:#e3e8ef; --blue:#1d4ed8; --blue-l:#93b4fd; --orange:#ea580c; --gold:#b45309;
+    --red:#dc2626; --dark:#7f1d1d; --good:#0f766e; --grey:#94a3b8; --teal:#0d9488;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+    font:15px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1320px;margin:0 auto;padding:28px 20px 56px}
+  header h1{margin:0 0 6px;font-size:30px;letter-spacing:.5px}
+  header h1 span{color:var(--ink3);font-weight:400;font-size:19px;margin-left:10px}
+  header .sub{margin:0 0 18px;color:var(--ink2);font-size:16px;max-width:940px}
+  .hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:12px;margin-bottom:20px}
+  .hero .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .hero .k{font-size:12px;color:var(--ink3);letter-spacing:.4px}
+  .hero .v{font-size:26px;font-weight:700;margin-top:2px;line-height:1.2}
+  .hero .v small{font-size:14px;font-weight:500;color:var(--ink2)}
+  .hero .n{font-size:12px;color:var(--ink3);margin-top:4px}
+  .hero .box.hi{background:#fff7ed;border-color:#fed7aa}
+  .hero .box.hi .v{color:var(--orange)}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+  .panel h3{margin:0 0 10px;font-size:14px;letter-spacing:.5px;color:var(--ink2);font-weight:600}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px solid var(--line);background:#fbfcfe;color:var(--ink2);
+    border-radius:999px;padding:6px 14px;font-size:14px;cursor:pointer;transition:.15s}
+  .chip:hover{border-color:#c3ccdb}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .chip.on.n{background:var(--orange);border-color:var(--orange)}
+
+  /* 单列/两列都用 minmax(0,1fr)：1fr = minmax(auto,1fr) 会被 TMap 固定尺寸 canvas 撑破 */
+  .cols{display:grid;gap:16px;margin-bottom:16px;grid-template-columns:minmax(0,1fr)}
+  @media(min-width:1000px){.cols{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}}
+  #map{width:100%;height:520px;border-radius:14px;border:1px solid var(--line);
+    background:#eef2f7;overflow:hidden;position:relative}
+  .mapbox{position:relative;min-width:0}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:12px;color:var(--ink2)}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+
+  .cmp{display:grid;gap:10px}
+  .card{border:1px solid var(--line);border-radius:12px;padding:13px 14px;background:#fbfcfe}
+  .card.hi{border-color:#fed7aa;background:#fff7ed}
+  .card .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .card .nm{font-weight:700;font-size:16px}
+  .card .tag{font-size:11px;color:var(--ink3);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+  .card .big{font-size:24px;font-weight:700;margin:6px 0 2px;line-height:1.15}
+  .card.hi .big{color:var(--orange)}
+  .card .sub2{font-size:12.5px;color:var(--ink3);line-height:1.55}
+
+  .per{display:grid;gap:5px;margin-top:9px}
+  .prow{display:grid;grid-template-columns:64px minmax(0,1fr) 66px;gap:9px;align-items:center;font-size:12.5px}
+  .prow .pn{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .prow .tb{height:15px;background:#eef2f7;border-radius:4px;overflow:hidden}
+  .prow .tb i{display:block;height:100%;border-radius:4px;background:var(--blue-l)}
+  .prow.slow .tb i{background:var(--red)}
+  .prow .vv{text-align:right;font-variant-numeric:tabular-nums}
+
+  .verdict{margin-top:10px;border:1px dashed #fdba74;background:#fffaf3;border-radius:11px;
+    padding:11px 13px;font-size:13.5px;line-height:1.7;color:#7c2d12}
+  .verdict b{color:var(--orange)}
+  .note{font-size:12.5px;color:var(--ink3);line-height:1.7;margin-top:8px}
+  .foot{margin-top:26px;font-size:12.5px;color:var(--ink3);line-height:1.8;
+    border-top:1px solid var(--line);padding-top:16px}
+  .foot b{color:var(--ink2)}
+  #err{display:none;margin:0 0 16px;padding:12px 14px;border-radius:10px;
+    background:#fff1f2;border:1px solid #fecdd3;color:var(--red);font-size:13.5px;white-space:pre-wrap}
+  table.t{width:100%;border-collapse:collapse;font-size:13px}
+  table.t th,table.t td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.t th{color:var(--ink3);font-weight:600}
+  table.t td.n{text-align:right;font-variant-numeric:tabular-nums}
+  table.t tr.me{background:#fff7ed}
+  table.t tr.me td{font-weight:700}
+  .tw{overflow-x:auto}
+  .fold{font-size:14px;color:var(--ink2);line-height:1.9}
+  .fold em{font-style:normal;color:var(--orange);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>折痕 · THE CREASE<span>把地图沿两个人中间对折，折痕从来不在中间</span></h1>
+    <p class="sub">两个人约见面，最自然的答案是「约在中间」。
+      可中间有三个：<b>坐标的中点</b>、<b>距离的中点</b>、<b>耗时相等的中点</b>——它们是三个不同的地方。
+      我们把地图对折，让两个人的家重合，能对上的不是终点，是钟表。
+      那条让两个人耗时相等的线就是折痕：它<b>不在中间</b>，而且<b>离中间忽近忽远，差出好几倍</b>。
+      八座城市平均下来，约在正中间会让两个人差 5.2 分钟；而只要往对的方向挪 1.2 公里，就能扯平。</p>
+  </header>
+
+  <div id="err"></div>
+
+  <div class="hero" id="hero"></div>
+
+  <div class="panel">
+    <h3>城市</h3>
+    <div class="chips" id="cityChips"></div>
+    <h3 style="margin-top:14px">几个人要碰面</h3>
+    <div class="chips" id="nChips"></div>
+    <p class="note" id="pairNote"></p>
+  </div>
+
+  <div class="cols">
+    <div class="mapbox">
+      <div id="map"></div>
+      <div class="legend">
+        <span><i style="background:#0d9488"></i>公平（两人耗时接近）</span>
+        <span><i style="background:#f59e0b"></i>一般</span>
+        <span><i style="background:#dc2626"></i>不公平（有人要多跑）</span>
+        <span><i style="background:#1d4ed8"></i>对 A 有利</span>
+        <span><i style="background:#ea580c"></i>对 B 有利</span>
+      </div>
+      <p class="note">地图上那条<span style="color:#dc2626;font-weight:700">红色曲线</span>就是折痕——
+        由每城 81 个规则网格点（两人到每点的真实门到门耗时）做 marching squares 提取的 Δt = 0 等值线，
+        网格步长约 4 km。底下一层淡色圆是每个网格点的耗时差：蓝＝A 更快，橙＝B 更快。
+        折痕可以断成几段，因为城市里的时间本来就不是位置的光滑函数。</p>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h3>约在哪（两人的门到门驾车耗时）</h3>
+        <div class="cmp" id="cmp"></div>
+        <div class="verdict" id="verdict"></div>
+      </div>
+      <div class="panel">
+        <h3>这一组里谁吃亏</h3>
+        <div class="per" id="per"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>八座城市：中间到底有多不公平</h3>
+    <div class="tw">
+      <table class="t" id="tbl">
+        <thead><tr>
+          <th>城市</th><th>两个人相距</th><th>「正中间」的不公</th><th>折痕最近一侧</th>
+          <th>折痕最远一侧</th><th>相差</th><th>公平点</th><th>公平点处的不公</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="note">「不公」= 两个人到该点的耗时差。折痕的最近一侧／最远一侧，是这条等时线离坐标中点最近和最远的距离，
+      括号里是方向。两者相差好几倍，说明等时线既不圆也不直——所以「挪多远」是个错问题，「往哪边挪」才是。</p>
+  </div>
+
+  <div class="panel">
+    <h3>怎么用：三条能直接带走的结论</h3>
+    <div class="fold" id="usage"></div>
+  </div>
+
+  <div class="foot">
+    <b>数据与口径。</b>门到门驾车耗时取自腾讯位置服务距离矩阵接口（driving），
+    8 座城市 × 4 个出发点 ×（24 个真实地铁站／商场 + 81 个折痕网格点 + 90 个径向采样点），
+    共 <span id="nEles">—</span> 次真实测算，均为<b>示例数据</b>：反映查询时刻的路网状态，
+    不同时段结果会变，不作为导航依据。<br>
+    <b>折痕怎么来的。</b>取 A、B 包围盒外扩 35% 的 9×9 规则网格，逐点测算两人到该点的耗时差 Δt，
+    用 marching squares 提取 Δt = 0 等值线并按公共端点接成折线。
+    折痕只画 A、B 两人；候选点的公平度按所选人数计算。
+    第一版曾用「过中点的 10 条射线找零点再连成闭环」，结果把等值线的不同分支连成了一个假闭环
+    （北京在 0° 与 198° 之间空了 180°），已废弃。<br>
+    <b>已知局限。</b>耗时含实时路况，同一 OD 反复查询有约 ±3% 波动；
+    网格步长约 4 km，等值线位置误差约 ±1.5 km，拐角被线性插值抹直；
+    「公平点」只在「总耗时不离谱」的候选 POI 集合里选，不是全城连续最优。<br>
+    <b>作者。</b>markzwang。地图能力由腾讯地图 JSAPI GL 与 WebService 提供。
+  </div>
+</div>
+
+<script src="model.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

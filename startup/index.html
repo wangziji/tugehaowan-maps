@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>起步税 · STARTUP TAX</title>
+<style>
+:root{
+  --bg:#f4f5f7; --card:#ffffff; --ink:#1e2430; --ink2:#5a6374; --ink3:#8f97a6;
+  --line:#e3e6ec; --accent:#c2410c; --accent2:#1d4ed8; --warm:#fdf6f1;
+  --shadow:0 1px 3px rgba(24,32,48,.06),0 8px 26px rgba(24,32,48,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);
+  font:15px/1.66 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:26px 20px 60px}
+
+header.top{margin-bottom:20px}
+.kicker{font-size:12px;letter-spacing:.2em;color:var(--ink3);margin-bottom:8px}
+h1{font-size:32px;line-height:1.2;margin:0 0 4px;letter-spacing:-.01em}
+h1 .en{font-size:13px;letter-spacing:.18em;color:var(--ink3);font-weight:500;display:block;margin-top:8px}
+h1 .cn-sub{display:block;font-size:17px;font-weight:600;color:var(--accent);margin-top:10px;letter-spacing:0}
+.lede{color:var(--ink2);font-size:15px;margin:12px 0 0;max-width:860px}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0 18px}
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 15px 15px;box-shadow:var(--shadow)}
+.stat .lb{font-size:11.5px;color:var(--ink3);letter-spacing:.06em;margin-bottom:7px}
+.stat .vl{font-size:25px;font-weight:700;line-height:1.15;letter-spacing:-.01em}
+.stat .vl small{font-size:13px;font-weight:600;color:var(--ink2);margin-left:3px}
+.stat .ft{font-size:12px;color:var(--ink3);margin-top:6px;line-height:1.5}
+
+.grid{display:grid;grid-template-columns:392px 1fr;gap:18px;align-items:start}
+@media(max-width:1000px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.pad{padding:16px 17px 18px}
+.card + .card{margin-top:14px}
+.card h2{font-size:13px;margin:0 0 12px;color:var(--ink2);font-weight:600;letter-spacing:.04em}
+.card h2 .sub{font-weight:400;color:var(--ink3);font-size:12px}
+
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.preset{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font-size:12.5px;cursor:pointer;color:var(--ink2);transition:.14s}
+.preset:hover{border-color:var(--accent);color:var(--accent)}
+.preset.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+.row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.row label{font-size:12.5px;color:var(--ink2);width:52px;flex:none}
+select{flex:1;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:13px;background:#fff;color:var(--ink)}
+input[type=range]{width:100%;margin:6px 0 2px;accent-color:var(--accent)}
+.dval{font-size:13px;color:var(--ink2)}
+.dval b{font-size:17px;color:var(--ink);font-weight:700}
+.hint{font-size:11.5px;color:var(--ink3);margin-top:2px;line-height:1.5}
+
+#map{height:462px;border-radius:12px;background:#eceff3;position:relative;overflow:hidden}
+.mapcard{padding:12px}
+.mapnote{font-size:11.5px;color:var(--ink3);margin-top:9px;line-height:1.55}
+.vbtns{display:flex;gap:7px;margin-top:9px}
+.vbtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;font-size:12px;cursor:pointer;color:var(--ink2)}
+.vbtn:hover{border-color:var(--accent);color:var(--accent)}
+.vbtn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.maperr{display:none;margin-top:9px;padding:8px 10px;border-radius:8px;background:#fdecec;border:1px solid #f6c9c9;color:#9b2c2c;font-size:12.5px}
+
+.rank{margin-top:2px}
+.rk{display:grid;grid-template-columns:52px 1fr 74px;gap:9px;align-items:center;padding:7px 0;border-top:1px solid #f0f2f5;cursor:pointer}
+.rk:first-child{border-top:none}
+.rk:hover{background:#fafbfc}
+.rk .nm{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.rk .dot{width:9px;height:9px;border-radius:3px;flex:none}
+.rk .bar{height:16px;border-radius:5px;background:#f1f3f6;position:relative;overflow:hidden}
+.rk .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;display:block}
+.rk .bar i.ghost{opacity:.28}
+.rk .tm{font-size:12.5px;text-align:right;color:var(--ink2);font-variant-numeric:tabular-nums}
+.rk.best .tm{color:var(--accent);font-weight:700}
+.rk.off{opacity:.42}
+.rk.off .tm{color:var(--ink3)}
+.rk .wst{font-size:11px;color:var(--ink3);margin-top:2px}
+
+.wide{margin-top:14px}
+svg.chart{width:100%;height:auto;display:block}
+table.params{width:100%;border-collapse:collapse;font-size:12.5px}
+table.params th,table.params td{border-bottom:1px solid #f0f2f5;padding:7px 6px;text-align:left}
+table.params th{color:var(--ink3);font-weight:600;font-size:11.5px;letter-spacing:.04em}
+table.params td.n{text-align:right;font-variant-numeric:tabular-nums}
+table.params tr.dim{opacity:.45}
+
+.legend{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:10px;font-size:12px;color:var(--ink2)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+footer.foot{margin-top:22px;padding:16px 18px;background:var(--warm);border:1px solid #f0e0d4;border-radius:13px;font-size:12.5px;color:#7a5c46;line-height:1.7}
+footer.foot b{color:#5d3f2c}
+.toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);background:#1e2430;color:#fff;
+  padding:9px 16px;border-radius:9px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .22s;z-index:99}
+.toast.on{opacity:.94}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="kicker">图个好玩 · 大地图全员手搓赛 · 第十一件</div>
+    <h1>起步税<span class="cn-sub">你打车去 300 米外，比走过去还慢</span>
+      <span class="en">STARTUP TAX</span></h1>
+    <p class="lede">
+      每一种交通工具都有一笔<strong>与距离无关</strong>的固定成本：等车、走到上车点、安检候机、找车位、出站进城。
+      这笔「起步税」不随距离变化，于是每种方式都有一个最短适用距离——低于它，它比更慢但零启动的方式还慢。
+      输入两点，它告诉你该怎么去、要多久，以及你为「出发」这件事白花了多少时间。
+    </p>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="lb">最优方式</div><div class="vl" id="s-best">—</div><div class="ft" id="s-best-ft">—</div></div>
+    <div class="stat"><div class="lb">门到门</div><div class="vl" id="s-time">—</div><div class="ft" id="s-time-ft">—</div></div>
+    <div class="stat"><div class="lb">白走的距离</div><div class="vl" id="s-waste">—</div><div class="ft" id="s-waste-ft">—</div></div>
+    <div class="stat"><div class="lb">白花的时间</div><div class="vl" id="s-frac">—</div><div class="ft" id="s-frac-ft">—</div></div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="card pad">
+        <h2>试试这些 <span class="sub">演示数据</span></h2>
+        <div class="presets" id="presets"></div>
+      </div>
+
+      <div class="card pad">
+        <h2>起点 / 终点 <span class="sub">也可以直接在地图上点一下</span></h2>
+        <div class="row"><label>起点</label><select id="sel-from"></select></div>
+        <div class="row"><label>终点</label><select id="sel-to"></select></div>
+        <div style="margin-top:12px">
+          <div class="dval">直线距离 <b id="d-km">—</b> <span id="d-note"></span></div>
+          <input type="range" id="slider" min="-1000" max="3700" value="0" step="1">
+          <div class="hint">拖动可在 100 米 – 5000 公里之间扫。距离轴是对数的，因为七个相带跨越三个数量级。</div>
+        </div>
+      </div>
+
+      <div class="card pad">
+        <h2>七种方式，门到门 <span class="sub">点一行可切换地图上的「白走圈」</span></h2>
+        <div class="rank" id="rank"></div>
+        <div class="hint" id="rank-hint"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card mapcard">
+        <div id="map"></div>
+        <div class="vbtns">
+          <button class="vbtn" data-view="route">视野：两地</button>
+          <button class="vbtn" data-view="waste">视野：白走圈</button>
+        </div>
+        <div class="mapnote" id="mapnote"></div>
+        <div class="maperr" id="maperr"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card pad wide">
+    <h2>相图：门到门时间 vs 距离 <span class="sub">对数横轴，虚线是方式之间的临界距离</span></h2>
+    <div id="chart"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <div class="card pad wide">
+    <h2>七个相带 <span class="sub">距离轴上谁最优；相邻临界点之间至少差 1.5 倍</span></h2>
+    <div id="bandstrip"></div>
+  </div>
+
+  <div class="card pad wide">
+    <h2>模型参数 <span class="sub">典型城市 / 典型城际的量级估算，不是任何一家的真实时刻表</span></h2>
+    <table class="params" id="params"></table>
+    <div class="hint" style="margin-top:10px">
+      门到门时间 = <b>起步税 S</b> + 路径里程 ÷ 在途速度 V，路径里程 = 直线距离 × 绕行系数 k。
+      自驾走两段模型：前 15 km 路径按 28 km/h（城市），之后按 85 km/h（高速）。
+      高铁 40 km 以下、飞机 250 km 以下视为不成立。
+    </div>
+  </div>
+
+  <footer class="foot">
+    <b>免责说明。</b>本作品是一个<strong>量级估算模型</strong>，不是真实时刻表、不是导航、不构成任何出行建议。
+    起步税 S、在途速度 V、绕行系数 k 均为典型场景的经验取值，服务于「看清固定成本如何决定最短适用距离」这一件事；
+    真实行程会因时段、天气、路况、车站与机场的具体位置、是否托运、是否打车接送而大幅偏移。
+    页面中出现的所有城市坐标来自腾讯位置服务地址解析接口，其余数字全部由本页模型现场计算。
+    <b>请勿据此赶车、赶飞机或做商业决策。</b>
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script charset="utf-8" src="https://map.qq.com/api/gljs?v=1.exp&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

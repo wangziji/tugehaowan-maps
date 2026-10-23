@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>埋哪儿 · 下葬选址与殡葬服务地图</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234A7C6F'/%3E%3Cpath d='M5 24l8-12 4 6 3-4 7 10z' fill='%23fff'/%3E%3Ccircle cx='23' cy='8' r='2.6' fill='%23C9A227'/%3E%3C/svg%3E">
+<script type="text/javascript">
+/* 底图三模式：key 模式（自带 Key）→ proxy 模式（运行时注入代理）→ 自绘示意底图。
+   只有在能真正拿到底图服务时才加载 SDK，避免满屏鉴权报错与 404。 */
+(function () {
+  var host = 'http://127.0.0.1:__WB_HTTP_PORT__/_TMapService/_wbt/__WB_TMAP_SECRET__';
+  var http = location.protocol !== 'file:';
+  var inlineKey = 'CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N';   // 使用者自备 Key（公网部署请配域名白名单）
+  var key = '';
+  try {
+    var qk = new URLSearchParams(location.search).get('key');
+    var stored = localStorage.getItem('burywhere_tmap_key') || '';
+    var picked = (qk !== null && qk !== '') ? qk : (stored !== '' ? stored : inlineKey);
+    key = (picked === 'off') ? '' : picked.trim();          // ?key=off 可强制回到自绘底图
+  } catch (e) { key = ''; }
+  var proxyOk = http && !/__WB_(HTTP_PORT|TMAP_SECRET)__/.test(host);
+  var libs = '&libraries=service,visualization';
+  if (key && http) {
+    window._TMapUsable = true; window._TMapMode = 'key';
+    document.write('<script src="https://map.qq.com/api/gljs?v=1.exp&key=' + encodeURIComponent(key) + libs + '"><\/script>');
+  } else if (proxyOk) {
+    window._TMapSecurityConfig = { serviceHost: host };
+    window._TMapUsable = true; window._TMapMode = 'proxy';
+    document.write('<script src="https://map.qq.com/api/gljs?v=1.exp' + libs + '"><\/script>');
+  } else {
+    window._TMapUsable = false; window._TMapMode = 'fallback';
+  }
+})();
+</script>
+<style>
+:root{
+  --ink:#2C3A38; --sub:#7A8A86; --line:#E3E0D9; --paper:#F7F6F3; --card:#FFFFFF;
+  --green:#4A7C6F; --gold:#C9A227; --warn:#B4453C; --blue:#3E7CA8; --eco:#7BA05B; --gray:#6E7B8B;
+  --shadow:0 2px 14px rgba(44,58,56,.09);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);background:var(--paper);overflow:hidden}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* ---------- topbar ---------- */
+.topbar{height:60px;flex:0 0 60px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 18px;gap:18px;z-index:30}
+.brand{display:flex;align-items:center;gap:9px;font-size:19px;font-weight:700;letter-spacing:2px}
+.brand .mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--green),#36604f);display:grid;place-items:center;color:#fff;font-size:15px}
+.brand small{display:block;font-size:10px;color:var(--sub);letter-spacing:0;font-weight:400}
+.tabs{display:flex;gap:2px;margin-left:10px;flex:1;overflow-x:auto}
+.tab{padding:8px 14px;border-radius:9px;font-size:13.5px;color:var(--sub);white-space:nowrap;transition:.18s}
+.tab:hover{background:#EFEDE7;color:var(--ink)}
+.tab.on{background:var(--green);color:#fff;font-weight:600}
+.topbar .right{display:flex;align-items:center;gap:12px;font-size:12.5px;color:var(--sub)}
+.avatar{width:30px;height:30px;border-radius:50%;background:#DDE5E1;display:grid;place-items:center;color:var(--green);font-weight:700}
+
+/* ---------- layout ---------- */
+.body{flex:1;display:flex;min-height:0}
+.side{width:352px;flex:0 0 352px;background:var(--card);border-right:1px solid var(--line);overflow-y:auto;padding:16px 16px 40px}
+.side::-webkit-scrollbar{width:6px}.side::-webkit-scrollbar-thumb{background:#D8D5CE;border-radius:3px}
+.stage{flex:1;position:relative;min-width:0;background:#EDEAE3}
+#map{position:absolute;inset:0;z-index:0}
+#fbMap{position:absolute;inset:0;width:100%;height:100%;display:none;z-index:0}
+.pane{display:none}.pane.on{display:block}
+
+/* ---------- side widgets ---------- */
+.h{font-size:15px;font-weight:700;margin-bottom:3px}
+.hint{font-size:12px;color:var(--sub);margin-bottom:12px;line-height:1.6}
+.sec{margin-bottom:18px}
+.sec-t{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:1px;margin-bottom:9px;display:flex;justify-content:space-between;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{padding:6px 11px;border:1px solid var(--line);border-radius:20px;font-size:12.5px;background:#fff;transition:.15s}
+.chip:hover{border-color:var(--green)}
+.chip.on{background:var(--green);border-color:var(--green);color:#fff}
+.chip.on.gold{background:var(--gold);border-color:var(--gold)}
+.slider-row{display:flex;align-items:center;gap:10px;font-size:12.5px;margin-bottom:10px}
+.slider-row input[type=range]{flex:1;accent-color:var(--green)}
+.val{font-weight:700;min-width:72px;text-align:right;font-variant-numeric:tabular-nums}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;transition:.15s;cursor:pointer}
+.card:hover{border-color:#B9CFC7;box-shadow:var(--shadow)}
+.card.on{border-color:var(--green);box-shadow:0 0 0 2px rgba(74,124,111,.14)}
+.card .t{font-size:14px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.card .m{font-size:12px;color:var(--sub);margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}
+.price{color:var(--gold);font-weight:700;font-variant-numeric:tabular-nums}
+.tag{display:inline-block;padding:2px 7px;border-radius:5px;font-size:11px;background:#EEF2EF;color:var(--green);margin:5px 5px 0 0}
+.tag.gray{background:#EEF0F2;color:var(--gray)}
+.tag.eco{background:#EEF4E8;color:#5C8040}
+.tag.blue{background:#E9F1F6;color:var(--blue)}
+.tag.gold{background:#FBF3DC;color:#93760F}
+.btn{width:100%;padding:11px;border-radius:10px;background:var(--green);color:#fff;font-size:13.5px;font-weight:600;transition:.15s}
+.btn:hover{background:#3D6A5E}
+.btn.ghost{background:#fff;color:var(--green);border:1px solid var(--green)}
+.btn.gold{background:var(--gold)}
+.btn:disabled{background:#C9C5BD;cursor:not-allowed}
+.btn-row{display:flex;gap:8px;margin-top:10px}
+.inp{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;font-family:inherit;background:#fff;color:var(--ink)}
+.inp:focus{outline:none;border-color:var(--green)}
+select.inp{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237A8A86'/%3E%3C/svg%3E") no-repeat right 11px center}
+.fld{margin-bottom:11px}
+.fld label{display:block;font-size:12px;color:var(--sub);margin-bottom:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+
+/* ---------- map tools ---------- */
+.maptools{position:absolute;right:16px;top:16px;display:flex;flex-direction:column;gap:8px;z-index:999;align-items:flex-end}
+.toolgroup{background:rgba(255,255,255,.95);border-radius:11px;box-shadow:var(--shadow);padding:5px;display:flex;flex-direction:column;gap:3px;backdrop-filter:blur(6px)}
+.tool{padding:7px 11px;border-radius:8px;font-size:12.5px;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.tool:hover{background:#EFEDE7}
+.tool.on{background:var(--green);color:#fff;font-weight:600}
+.tool .dot{width:8px;height:8px;border-radius:50%}
+.legend{position:absolute;left:16px;bottom:16px;background:rgba(255,255,255,.95);border-radius:10px;box-shadow:var(--shadow);padding:10px 12px;font-size:11.5px;z-index:999;backdrop-filter:blur(6px);min-width:150px}
+.legend b{display:block;font-size:11px;color:var(--sub);margin-bottom:6px;letter-spacing:1px}
+.lg{display:flex;align-items:center;gap:6px;margin-top:4px}
+.lg i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.notice{position:absolute;left:50%;top:16px;transform:translateX(-50%);background:rgba(44,58,56,.92);color:#fff;font-size:12.5px;padding:8px 14px;border-radius:20px;z-index:1500;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
+.notice.show{opacity:1}
+.scalebar{position:absolute;right:16px;bottom:16px;font-size:11px;color:var(--sub);background:rgba(255,255,255,.9);padding:4px 9px;border-radius:6px;z-index:999}
+
+/* ---------- detail card ---------- */
+.detail{position:absolute;left:16px;right:16px;bottom:16px;background:#fff;border-radius:16px 16px 14px 14px;box-shadow:0 -4px 26px rgba(44,58,56,.16);z-index:990;max-height:52%;overflow-y:auto;transform:translateY(120%);transition:transform .32s cubic-bezier(.22,.7,.3,1);padding:16px 18px}
+.detail.show{transform:translateY(0)}
+.detail .grab{width:38px;height:4px;background:#DDD9D1;border-radius:2px;margin:0 auto 12px}
+.detail h3{font-size:17px;display:flex;align-items:center;gap:8px}
+.detail .sub{font-size:12.5px;color:var(--sub);margin-top:5px}
+.kpis{display:flex;gap:22px;margin:14px 0;padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.kpi .k{font-size:11px;color:var(--sub)}
+.kpi .v{font-size:16px;font-weight:700;margin-top:3px}
+.kpi .v.gold{color:var(--gold)}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.qb{border:1px solid var(--line);border-radius:10px;padding:10px 4px;text-align:center;font-size:11.5px}
+.qb:hover{border-color:var(--green);color:var(--green)}
+.qb .ico{font-size:16px;display:block;margin-bottom:3px}
+
+/* ---------- overlay views ---------- */
+.overlay{position:absolute;inset:0;background:var(--paper);z-index:1200;display:none;overflow-y:auto}
+.overlay.show{display:block}
+.ov-head{position:sticky;top:0;background:rgba(247,246,243,.96);backdrop-filter:blur(8px);padding:14px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;z-index:5}
+.ov-head h2{font-size:17px}
+.ov-head .sub{font-size:12px;color:var(--sub);margin-top:2px}
+.ov-body{padding:22px}
+
+/* 3D scene */
+.scene3d{position:relative;height:420px;border-radius:14px;background:linear-gradient(#EAF0EC,#DCE6DE);overflow:hidden;border:1px solid var(--line);perspective:1300px;perspective-origin:50% 42%}
+.ground{position:absolute;left:50%;top:56%;width:760px;height:520px;transform:translate(-50%,-50%) rotateX(62deg) rotateZ(-32deg);transform-style:preserve-3d;background:
+  repeating-linear-gradient(90deg,#CBD9CE 0 1px,transparent 1px 76px),
+  repeating-linear-gradient(0deg,#CBD9CE 0 1px,transparent 1px 76px),
+  #E7EEE8;border-radius:6px}
+.tomb{position:absolute;width:26px;height:34px;transform:translate(-50%,-100%) rotateZ(32deg) rotateX(-62deg);transform-origin:bottom center;cursor:pointer;transition:.2s}
+.ground .dec{position:absolute}
+.ground .road{left:0;top:242px;width:760px;height:36px;background:#E4E0D6;border-radius:4px;box-shadow:inset 0 0 0 1px #D3CEC2}
+.ground .water{left:626px;top:52px;width:132px;height:96px;border-radius:50%;background:#BCD7E2;box-shadow:inset 0 0 0 2px #A8C8D6}
+.ground .green{background:#D3E2CB;border-radius:14px}
+.ground .gate{left:22px;top:228px;width:54px;height:64px;background:linear-gradient(#9C7A55,#7E5F40);border-radius:4px}
+.ground .tag{position:absolute;font-size:10px;color:#8A867D}
+.tomb .stone{width:26px;height:34px;border-radius:5px 5px 2px 2px;background:linear-gradient(#F2F1ED,#D6D3CB);border:1px solid #B9B5AC;box-shadow:var(--sh,4px 4px 8px rgba(0,0,0,.22));display:grid;place-items:center;font-size:9px;color:#8A867D}
+.tomb:hover .stone{background:linear-gradient(#fff,#E4E1D8);outline:2px solid var(--gold)}
+.tomb.sel .stone{background:linear-gradient(#FFF8E3,#EFE3B8);outline:2px solid var(--gold)}
+.tomb.free .stone{border-style:solid}
+.tomb.sold .stone{opacity:.45}
+.sunbar{display:flex;align-items:center;gap:12px;margin-top:14px;font-size:12.5px}
+.sunbar input{flex:1;accent-color:var(--gold)}
+
+/* AR scene */
+.ar{position:relative;height:480px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#22322C}
+.ar canvas{width:100%;height:100%;display:block}
+.ar .hud{position:absolute;left:14px;top:14px;background:rgba(0,0,0,.42);color:#fff;padding:8px 12px;border-radius:10px;font-size:12px;backdrop-filter:blur(4px);line-height:1.7}
+.ar .warn{position:absolute;left:14px;bottom:14px;background:rgba(180,69,60,.9);color:#fff;padding:6px 11px;border-radius:8px;font-size:11.5px}
+.ar .acts{position:absolute;right:14px;bottom:14px;display:flex;gap:8px}
+.ar .acts button{background:rgba(255,255,255,.92);padding:8px 12px;border-radius:10px;font-size:12.5px;font-weight:600}
+.ar .acts button.on{background:var(--gold);color:#08131A}   /* 金底上白字只有 2.4，改用深墨字 */
+.ar .tip{position:absolute;left:50%;top:58px;transform:translateX(-50%);color:rgba(255,255,255,.85);font-size:12px;background:rgba(0,0,0,.3);padding:5px 12px;border-radius:14px}
+.altaritems{position:absolute;left:50%;bottom:62px;transform:translateX(-50%);display:flex;gap:16px;align-items:flex-end;font-size:23px;opacity:.95}
+
+/* memorial */
+.mem{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
+.mem-hero{height:190px;border-radius:14px;background:linear-gradient(135deg,#3C5F55,#5B8B7A 55%,#C9A227);display:flex;align-items:flex-end;padding:20px;color:#fff}
+.mem-hero .n{font-size:24px;font-weight:700;letter-spacing:3px}
+.mem-hero .d{font-size:12.5px;opacity:.9;margin-top:5px}
+.altar{height:210px;border-radius:14px;background:linear-gradient(#FBF9F4,#EFEBE2);border:1px solid var(--line);position:relative;overflow:hidden}
+.altar .table{position:absolute;left:0;right:0;bottom:0;height:66px;background:linear-gradient(#C6A97A,#A98C5E);border-radius:6px 6px 0 0}
+.altar .anchor{position:absolute;left:50%;bottom:66px;transform:translateX(-50%);width:150px;height:96px;display:flex;align-items:flex-end;justify-content:center;gap:8px}
+.altar .item{font-size:26px;animation:drop .5s cubic-bezier(.2,1.4,.4,1)}
+@keyframes drop{from{transform:translateY(-70px) scale(.5);opacity:0}to{transform:none;opacity:1}}
+.acts-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-top:12px}
+.act{border:1px solid var(--line);border-radius:11px;padding:12px 4px;text-align:center;background:#fff;font-size:12px}
+.act:hover{border-color:var(--gold);color:#93760F}
+.act .ico{font-size:19px;display:block;margin-bottom:4px}
+.act .cnt{font-size:10.5px;color:var(--sub);display:block;margin-top:2px}
+.msgs{margin-top:14px;max-height:190px;overflow-y:auto}
+.msg{border-left:3px solid var(--green);padding:8px 0 8px 11px;font-size:12.5px;margin-bottom:9px;color:#3A4644;line-height:1.65}
+.msg .by{font-size:11px;color:var(--sub);margin-top:3px}
+
+/* fengshui report */
+.report{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px}
+.score-ring{display:flex;align-items:center;gap:20px}
+.ring{width:104px;height:104px;border-radius:50%;background:conic-gradient(var(--green) 0turn,var(--gold) var(--p,0turn),#EDEAE3 var(--p,0turn));display:grid;place-items:center;position:relative}
+.ring::after{content:"";position:absolute;inset:9px;background:#fff;border-radius:50%}
+.ring span{position:relative;font-size:27px;font-weight:800;font-variant-numeric:tabular-nums}
+.disc{font-size:11.5px;color:var(--sub);background:#FBF7EC;border:1px solid #EFE3C0;border-radius:9px;padding:10px 12px;margin-top:14px;line-height:1.7}
+.sugg li{list-style:none;font-size:12.5px;padding:7px 0 7px 22px;position:relative;line-height:1.6}
+.sugg li::before{position:absolute;left:0}
+.sugg li.g::before{content:"✅"}
+.sugg li.w::before{content:"⚠️"}
+.sugg li.b::before{content:"⛔"}
+
+/* route */
+.plan{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff;margin-bottom:9px}
+.plan.on{border-color:var(--green);box-shadow:0 0 0 2px rgba(74,124,111,.13)}
+.plan .r1{display:flex;justify-content:space-between;align-items:baseline}
+.plan .r1 b{font-size:14.5px}
+.plan .r1 em{font-style:normal;font-size:19px;font-weight:800;color:var(--green);font-variant-numeric:tabular-nums}
+.plan .r2{font-size:11.5px;color:var(--sub);margin-top:5px}
+.timetable{margin-top:12px}
+.tt{display:flex;gap:12px;border-left:2px solid var(--green);padding:9px 0 9px 12px;position:relative}
+.tt .tm{font-weight:800;font-variant-numeric:tabular-nums;min-width:48px}
+.tt .who{font-size:13px;font-weight:600}
+.tt .w{font-size:11.5px;color:var(--sub);margin-top:3px;line-height:1.6}
+
+/* compare */
+table.cmp{width:100%;border-collapse:collapse;font-size:12px}
+table.cmp th,table.cmp td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left}
+table.cmp th{color:var(--sub);font-weight:600;font-size:11px}
+table.cmp td.best{color:var(--green);font-weight:700}
+
+.empty{text-align:center;padding:40px 20px;color:var(--sub);font-size:13px;line-height:1.8}
+.empty .big{font-size:34px;margin-bottom:10px}
+.sharebox{margin-top:12px;background:#F2F5F3;border-radius:10px;padding:12px;font-size:12px;line-height:1.7}
+.code{display:inline-block;background:var(--gold);color:#08131A;padding:2px 9px;border-radius:5px;letter-spacing:3px;font-weight:700}   /* 金底上白字只有 2.4 */
+.toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%) translateY(20px);background:rgba(44,58,56,.94);color:#fff;padding:10px 18px;border-radius:22px;font-size:13px;opacity:0;transition:.25s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%)}
+
+/* =========================================================
+   夜间（暗黑）模式
+   关键约束：腾讯 GL 的底图和我们的标记/面/线画在同一张 WebGL canvas 里，
+   没有 DOM 叠层，所以无法"只给底图加滤镜"。做法是：
+     ① 整张 canvas 套 invert(1) hue-rotate(180deg)，把浅色底图翻成夜间配色；
+     ② 侧栏/图例/工具栏同步切成暗色 UI；
+     ③ 我们自己的图元颜色在 JS 里用 N() 预补偿一次（等价于先做一次逆变换），
+        滤镜后再还原成设计配色——标记依旧醒目，且图例（不加滤镜）与图上颜色一致。
+   ========================================================= */
+body.night{
+  --ink:#E6EDF2; --sub:#8D9CA8; --line:#26313C; --paper:#0D141B; --card:#131C25;
+  --green:#5CBBA0; --gold:#DDB23F; --warn:#D9634F; --blue:#4F9DD4; --eco:#8EC069; --gray:#8D9AA7;
+  --shadow:0 2px 16px rgba(0,0,0,.5);
+}
+body.night .stage{background:#080D12}
+/* 滤镜挂在 #map 容器而不是它里面的 canvas 上：#map 里除了画布还有腾讯地图的版权标识
+   （logo 图片 + "©2026 Tencent…" 一行 DOM 文字，内联写死 color:#333）。只滤画布的话，
+   那行深灰字落在夜间深色舞台上几乎看不见（走查发现的对比度 1.54）。
+   容器整体反相 → 文字自动变浅可读；logo 图片再反向补一次，保住品牌原色。
+   #fbMap 是自绘底图，本身就直接画夜间配色，不套滤镜。 */
+body.night #map{filter:invert(1) hue-rotate(180deg)}
+body.night #map img{filter:invert(1) hue-rotate(180deg)}
+/* 面板、卡片、输入类：白天写死的白底统一压成暗底 */
+body.night .chip,body.night .card,body.night .btn.ghost,body.night .inp,
+body.night .act,body.night .report,body.night .plan{background:#1A242E;color:var(--ink)}
+body.night select.inp{background-color:#1A242E}
+body.night .btn.ghost{color:var(--green);border-color:var(--green)}
+body.night .btn:disabled{background:#3A444D;color:#8D9AA8}
+/* :not(.on) 不能少：否则鼠标停在"当前已选中"的按钮上时，hover 背景会盖掉选中态的绿色底，
+   而文字已经变成深色，出现深底深字的隐形按钮 */
+body.night .tab:hover:not(.on),body.night .tool:hover:not(.on){background:#1F2A35}
+body.night .tab.on,body.night .tool.on,body.night .chip.on,body.night .btn{color:#08131A}
+body.night .btn:hover{background:#7CD0B8}
+/* 选中态胶囊必须在这里再声明一次底/边色：上面那条 `body.night .chip`（0,2,1）特异性高过
+   `.chip.on`（0,2,0），否则选中胶囊会变成"深底 + 深字 + 只剩绿边框"的隐形按钮。
+   —— 走查发现：默认全选的「葬式」四枚胶囊就是这么消失的。 */
+body.night .chip.on{background:var(--green);border-color:var(--green)}
+body.night .chip.on.gold{background:var(--gold);border-color:var(--gold)}
+body.night .card:hover{border-color:#31485A}
+body.night .card.on,body.night .plan.on{box-shadow:0 0 0 2px rgba(92,187,160,.18)}
+body.night .tag{background:#1E2C36}
+body.night .tag.gray{background:#232B33;color:#9AA6B2}
+body.night .tag.eco{background:#1B2A20;color:#9CCB74}
+body.night .tag.blue{background:#16303F;color:#6FB6E4}
+body.night .tag.gold{background:#33290F;color:#E2C162}
+body.night .avatar{background:#22303B;color:var(--green)}
+body.night .side::-webkit-scrollbar-thumb{background:#2C3742}
+/* 地图上的浮层：底部图例/比例尺、右上工具、底部详情卡 */
+body.night .toolgroup,body.night .legend{background:rgba(19,28,37,.94)}
+body.night .scalebar{background:rgba(19,28,37,.9)}
+body.night .detail{background:#131C25;box-shadow:0 -4px 30px rgba(0,0,0,.6)}
+body.night .detail .grab{background:#2E3945}
+body.night .msg{color:#C2CDD6}
+body.night .disc{background:#2A2412;border-color:#4C4020}
+body.night .sharebox{background:#18222B}
+body.night .ring{background:conic-gradient(var(--green) 0turn,var(--gold) var(--p,0turn),#1E2A35 var(--p,0turn))}
+body.night .ring::after{background:#131C25}
+body.night .overlay{background:var(--paper)}
+body.night .ov-head{background:rgba(13,20,27,.96)}
+/* 3D 沙盘与云祭扫的浅色场景一并入夜（否则整屏只有这两块是亮的） */
+body.night .scene3d{background:linear-gradient(#101A22,#0B1218)}
+body.night .ground{background:
+  repeating-linear-gradient(90deg,#1E2B35 0 1px,transparent 1px 76px),
+  repeating-linear-gradient(0deg,#1E2B35 0 1px,transparent 1px 76px),
+  #16212A}
+body.night .ground .road{background:#232F39;box-shadow:inset 0 0 0 1px #1B2630}
+body.night .ground .water{background:#16303E;box-shadow:inset 0 0 0 2px #1D3D4E}
+body.night .ground .green{background:#1B2C21}
+body.night .ground .tag{color:#A3B0BC}   /* 原 #7E8B96 在暗底上只有 4.1，10px 小字不达标 */
+body.night .tomb .stone{background:linear-gradient(#3E4A55,#2B353E);border-color:#4E5A66;color:#C6D0D8}
+body.night .tomb:hover .stone{background:linear-gradient(#4C5966,#3A4550)}
+body.night .tomb.sel .stone{background:linear-gradient(#6B5A22,#4E421A)}
+body.night .altar{background:linear-gradient(#1B2530,#121A22)}
+body.night .act:hover{color:var(--gold)}
+/* AR 场景里的几个悬浮按钮刻意保持浅色 HUD 质感，那就必须把字压深：
+   夜间 --ink 变成浅色后会被继承下去，浅字落在浅底上直接消失（审计对比度 1.02）。 */
+body.night .ar .acts button{color:#10202B}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand"><span class="mark">⛰</span><span>埋哪儿<small>下葬选址 · 殡葬服务地图</small></span></div>
+    <nav class="tabs">
+      <button class="tab on" data-tab="map">① 选址地图</button>
+      <button class="tab" data-tab="fs">② AI 风水堪舆</button>
+      <button class="tab" data-tab="view3d">③ 3D 实景看墓</button>
+      <button class="tab" data-tab="route">④ 下葬路线规划</button>
+      <button class="tab" data-tab="ar">⑤ AR 环保烧纸</button>
+      <button class="tab" data-tab="mem">⑥ 云祭扫</button>
+    </nav>
+    <div class="right"><span>深圳市 · 演示数据</span><span class="avatar">李</span></div>
+  </header>
+
+  <div class="body">
+    <!-- ============ SIDE ============ -->
+    <aside class="side">
+
+      <!-- P1 选址 -->
+      <section class="pane on" data-pane="map">
+        <div class="h">选址地图</div>
+        <div class="hint">按预算、距离、葬式与朝向筛选全城在架墓园，图面随筛选实时变化。</div>
+
+        <div class="sec">
+          <div class="sec-t">出发锚点 <span style="font-weight:400">出殡起点 · 可拖动</span></div>
+          <div class="card" style="cursor:default">
+            <div class="t">📍 深圳市殡仪馆 <span class="tag blue">起点</span></div>
+            <div class="m"><span>114.162, 22.630 · 龙岗大道549号</span><span>作为距离计算基准</span></div>
+          </div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-t">预算区间</div>
+          <div class="slider-row"><input type="range" id="budget" min="2" max="30" step="1" value="30"><span class="val" id="budgetV">≤ 30万</span></div>
+          <div class="sec-t">距起点车程</div>
+          <div class="slider-row"><input type="range" id="dist" min="5" max="60" step="5" value="60"><span class="val" id="distV">≤ 60km</span></div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-t">葬式</div>
+          <div class="chips" id="fType">
+            <button class="chip on" data-v="立碑">立碑</button>
+            <button class="chip on" data-v="生态">生态葬</button>
+            <button class="chip on" data-v="骨灰堂">骨灰堂</button>
+            <button class="chip on" data-v="海葬">海葬</button>
+          </div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-t">朝向（廿四山）</div>
+          <div class="chips" id="fOrient">
+            <button class="chip" data-v="坐北朝南">坐北朝南</button>
+            <button class="chip" data-v="坐西朝东">坐西朝东</button>
+            <button class="chip" data-v="坐东北朝西南">坐东北朝西南</button>
+            <button class="chip" data-v="坐西北朝东南">坐西北朝东南</button>
+          </div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-t">其他</div>
+          <div class="chips" id="fOther">
+            <button class="chip" data-v="公益性">仅公益性</button>
+            <button class="chip" data-v="充足">空位充足</button>
+            <button class="chip" data-v="高分">评分≥4.6</button>
+          </div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-t">筛出结果 <span id="cnt" class="val" style="min-width:auto">12 / 12</span></div>
+          <div id="list"></div>
+          <div id="emptyState" class="empty" style="display:none">
+            <div class="big">🕊</div>没有符合条件的墓园<br>
+            <button class="btn ghost" style="width:auto;padding:7px 14px;margin-top:10px" onclick="resetFilter()">放宽条件重筛</button>
+          </div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-t">对比栏 <span id="cmpCnt" style="font-weight:400">0 / 3</span></div>
+          <button class="btn ghost" onclick="doCompare()">开始对比</button>
+          <div id="cmpResult" style="margin-top:12px"></div>
+        </div>
+      </section>
+
+      <!-- P4 AI 风水 -->
+      <section class="pane" data-pane="fs">
+        <div class="h">AI 风水堪舆</div>
+        <div class="hint">基于传统形势学文化习俗生成参考报告，<b>不构成任何吉凶承诺</b>。</div>
+        <div class="fld"><label>候选园区</label>
+          <select class="inp" id="fsPark"></select>
+        </div>
+        <div class="grid2">
+          <div class="fld"><label>逝者生辰</label><input class="inp" type="date" id="fsBirth" value="1948-03-12"></div>
+          <div class="fld"><label>时辰</label><select class="inp" id="fsHour"><option>子时</option><option selected>卯时</option><option>午时</option><option>酉时</option></select></div>
+        </div>
+        <div class="grid2">
+          <div class="fld"><label>性别</label><select class="inp"><option>男</option><option>女</option></select></div>
+          <div class="fld"><label>穴位坐向</label><select class="inp" id="fsOrient">
+            <option>子山午向</option><option selected>癸山丁向</option><option>艮山坤向</option><option>卯山酉向</option><option>巽山乾向</option><option>午山子向</option><option>坤山艮向</option><option>酉山卯向</option><option>乾山巽向</option>
+          </select></div>
+        </div>
+        <div class="fld"><label>家属偏好（多选）</label>
+          <div class="chips" id="fsPref">
+            <button class="chip on" data-v="明堂开阔">明堂开阔</button>
+            <button class="chip on" data-v="背有靠山">背有靠山</button>
+            <button class="chip" data-v="近水">近水</button>
+            <button class="chip" data-v="安静">环境安静</button>
+            <button class="chip" data-v="避主干道">远离主干道</button>
+          </div>
+        </div>
+        <div class="fld"><label>周边环境照片（可选，演示跳过）</label>
+          <input class="inp" value="未上传 · 将仅依据地形水文与坐向推算" disabled>
+        </div>
+        <button class="btn" onclick="runFS()">开始堪舆</button>
+        <button class="btn ghost" style="margin-top:8px" onclick="showHistory()">我的报告（3）</button>
+        <div class="disc" style="margin-top:12px">我们怎么算：读取园区地形坡度、水系走向与坐向关系，比对形势学术语库后生成白话解读。<b>不做运势预测，不涉及医疗与投资建议。</b></div>
+      </section>
+
+      <!-- P6 3D -->
+      <section class="pane" data-pane="view3d">
+        <div class="h">3D 实景看墓</div>
+        <div class="hint">穴位级浏览，含朝向与日照模拟。点击沙盘上的碑位查看穴位。</div>
+        <div class="fld"><label>园区</label><select class="inp" id="v3Park"></select></div>
+        <div class="fld"><label>分区</label>
+          <div class="chips" id="v3Zone">
+            <button class="chip on" data-v="A">A 区（立碑）</button>
+            <button class="chip" data-v="B">B 区（生态）</button>
+            <button class="chip" data-v="C">C 区（壁葬）</button>
+          </div>
+        </div>
+        <div class="sec-t" style="margin-top:14px">穴位列表</div>
+        <div id="v3List"></div>
+      </section>
+
+      <!-- P7 路线 -->
+      <section class="pane" data-pane="route">
+        <div class="h">下葬路线规划</div>
+        <div class="hint">以吉时倒推出发时刻，产出可分享到家族群的车队方案。</div>
+        <div class="fld"><label>起点</label><select class="inp" id="rtFrom">
+          <option>深圳市殡仪馆</option><option>当前位置（手机定位）</option><option>自定义…</option>
+        </select></div>
+        <div class="fld"><label>终点园区</label><select class="inp" id="rtTo"></select></div>
+        <div class="fld"><label>下葬吉时</label><input class="inp" type="datetime-local" id="rtTime" value="2026-10-19T10:30"></div>
+        <button class="btn" onclick="planRoute()">规划路线</button>
+        <div id="rtPlans" style="margin-top:14px"></div>
+        <div class="sec" style="margin-top:14px">
+          <div class="sec-t">沿途服务点</div>
+          <div class="chips" id="rtPoi">
+            <button class="chip on" data-v="花圈">花圈 / 白事用品</button>
+            <button class="chip on" data-v="停车">停车场</button>
+            <button class="chip" data-v="休息">休息区</button>
+            <button class="chip" data-v="洗手间">洗手间</button>
+          </div>
+        </div>
+        <div id="rtConvoy"></div>
+      </section>
+
+      <!-- P9 AR -->
+      <section class="pane" data-pane="ar">
+        <div class="h">AR 环保烧纸</div>
+        <div class="hint">以虚拟纸钱、电子烛、心愿树替代明火焚烧，园区禁烧区同样可用。</div>
+        <div class="card" style="cursor:default">
+          <div class="t">当前墓位</div>
+          <div class="m" id="arGrave">报恩福地墓园 · A 区 3 排 12 号</div>
+        </div>
+        <div class="sec-t" style="margin-top:14px">祭扫方式</div>
+        <div class="chips" id="arMode">
+          <button class="chip on" data-v="money">撒纸钱</button>
+          <button class="chip" data-v="yuanbao">纸元宝</button>
+          <button class="chip" data-v="candle">点电子烛</button>
+          <button class="chip" data-v="tree">心愿树</button>
+        </div>
+        <div class="fld" style="margin-top:12px"><label>心愿一句话（挂上心愿树）</label><input class="inp" id="arWish" placeholder="爸，我们都挺好的，勿念。"></div>
+        <button class="btn gold" onclick="arWishTree()">挂上心愿树</button>
+        <div class="card" style="cursor:default;margin-top:14px">
+          <div class="t">环保积分</div>
+          <div class="m"><span>本次 <b id="arPts">0</b> 分</span><span>累计 <b>1280</b> 分 · 已兑换 2 棵树</span></div>
+          <div style="font-size:11.5px;color:var(--sub);margin-top:7px">约减少 PM2.5 排放 <b id="arPm">0</b> g，替代纸钱 <b id="arSheets">0</b> 张</div>
+        </div>
+        <button class="btn ghost" style="margin-top:10px" onclick="toast('纪念卡已生成，可保存到纪念馆或分享')">结束并生成纪念卡</button>
+      </section>
+
+      <!-- P10 云祭扫 -->
+      <section class="pane" data-pane="mem">
+        <div class="h">云祭扫 · 线上纪念馆</div>
+        <div class="hint">异地亲属可远程献花、留言、观看仪式直播，或预约代客祭扫。</div>
+        <div class="fld"><label>我的纪念馆</label><select class="inp" id="memSel">
+          <option>李国栋（父亲）· 报恩福地墓园</option>
+          <option>王秀兰（母亲）· 深圳市龙山永久墓园</option>
+        </select></div>
+        <div class="card" style="cursor:default">
+          <div class="t">墓位锚点 <span class="tag">已绑定</span></div>
+          <div class="m"><span>A 区 3 排 12 号</span><span>距上次祭扫 42 天</span></div>
+          <button class="btn ghost" style="margin-top:10px" onclick="jumpToGrave()">在地图上定位墓位</button>
+        </div>
+        <div class="sec-t" style="margin-top:14px">代客祭扫</div>
+        <div class="card" style="cursor:default">
+          <div class="t">标准祭扫 <span class="price">¥298</span></div>
+          <div class="m"><span>清扫 · 献花 · 读信 · 6张照片 · 3分钟视频</span></div>
+          <button class="btn" style="margin-top:10px" onclick="toast('已预约：2026-10-25 09:00，服务者将在履约后回传影像')">立即预约</button>
+        </div>
+        <div class="card" style="cursor:default">
+          <div class="t">下葬仪式直播 <span class="tag gold">可预约</span></div>
+          <div class="m"><span>2026-10-19 10:00 起 · 预计 45 分钟</span></div>
+          <div class="btn-row"><button class="btn ghost" onclick="toast('已加入直播提醒，开始前 30 分钟推送')">预约提醒</button><button class="btn ghost" onclick="toast('回放加载中（演示）')">看回放</button></div>
+        </div>
+      </section>
+    </aside>
+
+    <!-- ============ STAGE ============ -->
+    <div class="stage">
+      <div id="map"></div>
+      <canvas id="fbMap"></canvas>
+
+      <div class="maptools">
+        <div class="toolgroup">
+          <button class="tool on" data-layer="poi"><span class="dot" style="background:var(--green)"></span>POI 打点</button>
+          <button class="tool" data-layer="heat"><span class="dot" style="background:#D9703C"></span>价格热力</button>
+          <button class="tool" data-layer="district"><span class="dot" style="background:var(--blue)"></span>空位行政区</button>
+          <button class="tool" data-layer="line"><span class="dot" style="background:var(--gold)"></span>起点连线</button>
+        </div>
+        <div class="toolgroup">
+          <button class="tool" onclick="mapIns&&mapIns.easeTo({center:new TMap.LatLng(22.6295,114.1616),zoom:13})">◎ 回到起点</button>
+          <button class="tool" id="nightBtn" onclick="toggleNight()" title="夜间暗黑底图 / 日间底图 切换">🌙 夜间模式</button>
+          <button class="tool" onclick="setTMapKey()" title="配置腾讯位置服务 Key 以切换到真实底图">🔑 底图 Key</button>
+        </div>
+      </div>
+
+      <div class="legend" id="legend"></div>
+      <div class="scalebar" id="scalebar">GCJ-02</div>
+      <div class="notice" id="notice"></div>
+
+      <div class="detail" id="detail"></div>
+
+      <!-- overlay: 3D -->
+      <div class="overlay" data-ov="view3d">
+        <div class="ov-head"><div><h2>3D 实景看墓 · <span id="v3Title">报恩福地墓园</span></h2><div class="sub">园区沙盘 · 穴位级浏览 · 日照模拟（演示渲染）</div></div>
+          <button class="btn ghost" style="width:auto;padding:8px 16px" onclick="switchTab('map')">返回地图</button></div>
+        <div class="ov-body">
+          <div class="scene3d" id="scene3d"><div class="ground" id="ground"></div></div>
+          <div class="sunbar"><span>☀️ 日照</span><input type="range" id="sun" min="6" max="18" step="1" value="12"><span id="sunV" class="val" style="min-width:120px;text-align:left">12:00 · 春分</span></div>
+          <div id="v3Info" style="margin-top:14px"></div>
+        </div>
+      </div>
+
+      <!-- overlay: AR -->
+      <div class="overlay" data-ov="ar">
+        <div class="ov-head"><div><h2>AR 环保烧纸撒纸钱</h2><div class="sub">在墓位实景上叠加虚拟祭扫（演示为模拟场景，实际调用摄像头 + WebXR）</div></div>
+          <button class="btn ghost" style="width:auto;padding:8px 16px" onclick="switchTab('map')">返回地图</button></div>
+        <div class="ov-body">
+          <div class="ar" id="arStage">
+            <canvas id="arCanvas"></canvas>
+            <div class="hud">墓位：<b id="arGrave2">报恩福地墓园 A-3-12</b><br>环保积分 <b id="arPts2">0</b> · 距上次祭扫 42 天</div>
+            <div class="tip">按住并拖动手指 → 撒纸钱；双指聚拢 → 聚火</div>
+            <div class="warn">本园区全域禁止明火，请使用环保祭扫方式</div>
+            <div class="acts">
+              <button class="on" data-ar="money">撒纸钱</button><button data-ar="yuanbao">纸元宝</button>
+              <button data-ar="candle">点电子烛</button><button data-ar="tree">心愿树</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+            <button class="btn ghost" style="width:auto;padding:9px 16px" onclick="arClear()">清空场景</button>
+            <button class="btn ghost" style="width:auto;padding:9px 16px" onclick="toast('已切换为无 AR 降级模式：静态场景同样可完成祭扫')">无 AR 降级模式</button>
+            <button class="btn gold" style="width:auto;padding:9px 16px" onclick="toast('纪念卡已生成：含墓位、时间、心愿与环保积分')">生成纪念卡</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- overlay: 云祭扫 -->
+      <div class="overlay" data-ov="mem">
+        <div class="ov-head"><div><h2>云祭扫 · 李国栋纪念馆</h2><div class="sub">1948.03.12 — 2026.10.12 · 访问范围：仅家人</div></div>
+          <button class="btn ghost" style="width:auto;padding:8px 16px" onclick="switchTab('map')">返回地图</button></div>
+        <div class="ov-body">
+          <div class="mem">
+            <div>
+              <div class="mem-hero"><div><div class="n">李 国 栋</div><div class="d">生于 1948 年 3 月 12 日 · 卒于 2026 年 10 月 12 日<br>墓位：报恩福地墓园 A 区 3 排 12 号</div></div></div>
+              <div class="altar" id="altar">
+                <div class="altaritems"><span>🪔</span><span>🕯</span><span>🌸</span><span>🕯</span><span>🍶</span></div>
+                <div class="anchor" id="anchor"></div>
+                <div class="table"></div>
+              </div>
+              <div class="acts-grid">
+                <button class="act" data-act="🌸 献花"><span class="ico">🌸</span>献花<span class="cnt" data-cnt="flower">128</span></button>
+                <button class="act" data-act="🕯 点烛"><span class="ico">🕯</span>点烛<span class="cnt" data-cnt="candle">96</span></button>
+                <button class="act" data-act="🪔 上香"><span class="ico">🪔</span>上香<span class="cnt" data-cnt="incense">204</span></button>
+                <button class="act" data-act="🍶 敬酒"><span class="ico">🍶</span>敬酒<span class="cnt" data-cnt="wine">41</span></button>
+                <button class="act" data-act="✍️ 留言"><span class="ico">✍️</span>留言<span class="cnt" data-cnt="msg">57</span></button>
+              </div>
+              <div class="msgs" id="msgs"></div>
+            </div>
+            <div>
+              <div class="card" style="cursor:default">
+                <div class="t">祭扫记录</div>
+                <div class="msg" style="border-color:var(--gold)">李雯 献花 · 3 小时前</div>
+                <div class="msg" style="border-color:var(--gold)">李强（异地·杭州）云点烛 · 昨天 21:14</div>
+                <div class="msg" style="border-color:var(--gold)">代客祭扫已完成 · 42 天前 · 回传 6 张照片</div>
+              </div>
+              <div class="card" style="cursor:default">
+                <div class="t">家庭成员协作 <span class="tag">3 人</span></div>
+                <div class="m"><span>李雯（管理员）</span><span>李强</span><span>陈静</span></div>
+                <button class="btn ghost" style="margin-top:10px" onclick="toast('邀请链接已复制，7 天内有效')">邀请家人共同管理</button>
+              </div>
+              <div class="sharebox">分享链接<br><b>https://burywhere.cn/m/LGD1948</b><br>访问口令 <span class="code">8F2K1Q</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- overlay: 风水报告 -->
+      <div class="overlay" data-ov="fs">
+        <div class="ov-head"><div><h2>AI 堪舆报告 <span id="fsTitle" class="sub" style="display:inline"></span></h2><div class="sub">传统形势学文化参考 · 不构成任何吉凶承诺</div></div>
+          <button class="btn ghost" style="width:auto;padding:8px 16px" onclick="switchTab('map')">返回地图</button></div>
+        <div class="ov-body" style="max-width:860px;margin:0 auto">
+          <div id="fsLoading" style="display:none;text-align:center;padding:80px 20px">
+            <div style="font-size:38px;margin-bottom:16px" id="fsSpin">⛰</div>
+            <div style="font-size:14px" id="fsStep">正在读取地形水文…</div>
+          </div>
+          <div id="fsReport"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   埋哪儿 · 演示原型
+   墓园名称与坐标来自腾讯位置服务真实 POI（深圳，GCJ-02）；
+   价格 / 空位 / 评分 / 朝向等经营属性为演示用示例数据。
+   ========================================================= */
+
+/* ---------- 数据 ---------- */
+const HOME = {lng:114.161642, lat:22.629516, name:'深圳市殡仪馆'};   // 龙岗区龙岗大道549号
+const PARKS = [
+  {id:'p01',name:'报恩福地墓园',type:'立碑',district:'南山区',lng:113.934972,lat:22.594972,pmin:68000,pmax:220000,vacancy:'充足',orient:['坐北朝南','坐西朝东'],nat:'经营性',rate:4.8,tags:['立碑','坐北朝南','资质齐全','可预约看墓']},
+  {id:'p02',name:'宝山园',type:'立碑',district:'宝安区',lng:113.881748,lat:22.671504,pmin:58000,pmax:160000,vacancy:'一般',orient:['坐西北朝东南','坐西朝东'],nat:'经营性',rate:4.6,tags:['立碑','靠山','明堂开阔']},
+  {id:'p03',name:'七沥墓园',type:'生态',district:'宝安区',lng:113.865930,lat:22.696415,pmin:9800,pmax:28000,vacancy:'充足',orient:['坐西北朝东南'],nat:'公益性',rate:4.4,tags:['树葬','草坪葬','可降解']},
+  {id:'p04',name:'珠江口海葬区',type:'海葬',district:'宝安区',lng:113.730000,lat:22.680000,pmin:0,pmax:3000,vacancy:'充足',orient:['—'],nat:'公益性',rate:4.9,tags:['海葬','免费','纪念墙']},
+  {id:'p05',name:'龙山墓园',type:'立碑',district:'龙华区',lng:114.016170,lat:22.685873,pmin:48000,pmax:135000,vacancy:'充足',orient:['坐北朝南','坐西朝东'],nat:'经营性',rate:4.5,tags:['立碑','新园','空位多']},
+  {id:'p06',name:'万寿山陵园',type:'生态',district:'龙华区',lng:114.047407,lat:22.740108,pmin:6800,pmax:18000,vacancy:'充足',orient:['坐东北朝西南'],nat:'公益性',rate:4.2,tags:['草坪葬','树葬','低价']},
+  {id:'p07',name:'怀恩园',type:'骨灰堂',district:'光明区',lng:113.946269,lat:22.713936,pmin:8000,pmax:26000,vacancy:'一般',orient:['坐北朝南'],nat:'公益性',rate:4.3,tags:['壁葬','室内','安静']},
+  {id:'p08',name:'吉田墓园',type:'骨灰堂',district:'龙岗区',lng:114.162973,lat:22.634511,pmin:6000,pmax:20000,vacancy:'充足',orient:['坐西朝东'],nat:'经营性',rate:4.7,tags:['壁葬','大型','近市区']},
+  {id:'p09',name:'深圳市龙山永久墓园',type:'立碑',district:'龙岗区',lng:114.291028,lat:22.704243,pmin:38000,pmax:120000,vacancy:'充足',orient:['坐北朝南','坐西北朝东南'],nat:'经营性',rate:4.5,tags:['立碑','大型','停车充足']},
+  {id:'p10',name:'福山墓园',type:'立碑',district:'坪山区',lng:114.353036,lat:22.752311,pmin:32000,pmax:98000,vacancy:'充足',orient:['坐北朝南'],nat:'公益性',rate:4.1,tags:['立碑','背山','环境好']},
+  {id:'p11',name:'大鹏湾华侨墓园',type:'立碑',district:'盐田区',lng:114.346295,lat:22.598203,pmin:98000,pmax:280000,vacancy:'紧张',orient:['坐北朝南','坐东北朝西南'],nat:'经营性',rate:4.8,tags:['立碑','背山面海','景观好']},
+  {id:'p12',name:'大鹏湾海葬区',type:'海葬',district:'盐田区',lng:114.330000,lat:22.585000,pmin:0,pmax:3000,vacancy:'充足',orient:['—'],nat:'公益性',rate:4.9,tags:['海葬','免费','海景']}
+];
+/* 高饱和、互为补色的标记配色：底图是米灰/橄榄/浅蓝，原来那组莫兰迪色会被吞掉 */
+const TYPE_COLOR = {'立碑':'#D92D20','生态':'#16A34A','骨灰堂':'#7C3AED','海葬':'#0284C7'};
+const TYPE_GLYPH = {'立碑':'碑','生态':'林','骨灰堂':'堂','海葬':'海'};
+const HOME_COLOR = '#F97316';   // 出发点（深圳市殡仪馆）
+const SEL_COLOR  = '#111827';   // 选中态
+const SVC_COLOR  = {'花圈':'#F59E0B','停车':'#0891B2','休息':'#15803D','洗手间':'#9333EA'};   // 沿途服务点
+/* 夜间专用的一版"源色"。画布在夜间要走 invert(1) hue-rotate(180deg)，
+   源色必须挑成"翻过来才好看"的值，屏幕最终呈现为下面这组（亮度都 <150）：
+   立碑 珊瑚红 / 生态 绿 / 骨灰堂 紫罗兰 / 海葬 亮蓝 / 起点 橙。
+   这样五支针亮度口径一致，就能统一用白描边 + 白字，风格不打架。 */
+const TYPE_COLOR_NIGHT = {'立碑':'#FF624D','生态':'#18A54C','骨灰堂':'#B98CFF','海葬':'#0284C7'};
+const HOME_COLOR_NIGHT = '#E66003';
+function TC(k){ return NIGHT ? TYPE_COLOR_NIGHT[k] : TYPE_COLOR[k]; }
+function HC(){ return NIGHT ? HOME_COLOR_NIGHT : HOME_COLOR; }
+/* 行政区面：按真实相对位置手绘的近似多边形（示意边界，非测绘成果） */
+const DISTRICTS = {
+  '南山区':[[113.870,22.455],[114.050,22.470],[114.060,22.530],[114.010,22.600],[113.920,22.600],[113.890,22.540],[113.855,22.475]],
+  '福田区':[[114.050,22.470],[114.100,22.470],[114.110,22.560],[114.060,22.620],[114.010,22.600],[114.050,22.530]],
+  '罗湖区':[[114.100,22.500],[114.200,22.520],[114.220,22.590],[114.150,22.625],[114.060,22.620],[114.100,22.550]],
+  '盐田区':[[114.220,22.600],[114.270,22.545],[114.340,22.545],[114.400,22.575],[114.360,22.650],[114.260,22.660]],
+  '宝安区':[[113.880,22.530],[113.920,22.560],[113.930,22.660],[113.930,22.720],[113.880,22.750],[113.830,22.780],[113.800,22.760],[113.795,22.700],[113.810,22.650],[113.845,22.580]],
+  '光明区':[[113.930,22.695],[114.000,22.720],[114.030,22.770],[114.020,22.860],[113.940,22.880],[113.860,22.845],[113.845,22.790],[113.870,22.730],[113.900,22.700]],
+  '龙华区':[[113.960,22.630],[114.030,22.615],[114.130,22.630],[114.150,22.720],[114.090,22.775],[114.000,22.755],[113.940,22.735],[113.940,22.660]],
+  '龙岗区':[[114.130,22.630],[114.170,22.800],[114.260,22.840],[114.340,22.775],[114.320,22.700],[114.300,22.620],[114.210,22.600]],
+  '坪山区':[[114.300,22.620],[114.320,22.700],[114.340,22.775],[114.420,22.790],[114.440,22.710],[114.410,22.630],[114.350,22.605]],
+  '大鹏新区':[[114.350,22.605],[114.410,22.630],[114.490,22.625],[114.570,22.590],[114.600,22.510],[114.530,22.440],[114.440,22.500],[114.370,22.560]]
+};
+const VAC_COLOR = {'充足':'#7BA05B','一般':'#C9A227','紧张':'#B4453C'};
+/* 示意底图要素：主干道/高速骨架 + 水域 + 区名（深圳，GCJ-02 近似） */
+const SZ_ROADS = [
+  {n:'深南大道',w:3.4,pts:[[113.87,22.532],[114.00,22.545],[114.06,22.552],[114.14,22.562]]},
+  {n:'北环大道',w:3.0,pts:[[113.90,22.585],[114.02,22.600],[114.10,22.602],[114.20,22.604]]},
+  {n:'滨海大道',w:2.8,pts:[[113.90,22.492],[114.00,22.512],[114.09,22.524]]},
+  {n:'广深高速',w:3.6,pts:[[113.84,22.660],[113.90,22.600],[113.96,22.552],[114.01,22.505]]},
+  {n:'机荷高速',w:3.6,pts:[[113.82,22.706],[114.00,22.686],[114.20,22.700],[114.36,22.716]]},
+  {n:'梅观高速',w:3.0,pts:[[114.055,22.560],[114.075,22.640],[114.10,22.720]]},
+  {n:'龙岗大道',w:2.8,pts:[[114.12,22.600],[114.22,22.660],[114.29,22.722]]},
+  {n:'盐排高速',w:2.6,pts:[[114.20,22.600],[114.26,22.580],[114.31,22.585]]}
+];
+const SZ_WATER = [
+  [[113.74,22.88],[113.775,22.76],[113.80,22.66],[113.825,22.57],[113.85,22.49],[113.875,22.42],[113.74,22.42]],
+  [[113.94,22.43],[114.02,22.45],[114.10,22.47],[114.18,22.51],[114.24,22.56],[114.24,22.47],[114.12,22.43],[114.02,22.41]],
+  [[114.29,22.56],[114.36,22.58],[114.44,22.62],[114.42,22.55],[114.34,22.51]]
+];
+const DISTRICT_LABEL = {'南山区':[113.960,22.515],'福田区':[114.055,22.565],'罗湖区':[114.140,22.575],
+  '盐田区':[114.285,22.600],'宝安区':[113.855,22.655],'光明区':[113.945,22.790],'龙华区':[114.050,22.690],
+  '龙岗区':[114.200,22.700],'坪山区':[114.375,22.700],'大鹏新区':[114.480,22.555]};
+
+const GRAVES = {
+  A:[{z:'A',r:3,n:12,o:'坐北朝南',area:1.8,price:88000,st:'free'},{z:'A',r:3,n:13,o:'坐北朝南',area:1.8,price:88000,st:'sold'},
+     {z:'A',r:4,n:5,o:'坐北朝南',area:2.4,price:108000,st:'free'},{z:'A',r:4,n:6,o:'坐北朝南',area:2.4,price:108000,st:'free'},
+     {z:'A',r:5,n:9,o:'坐西朝东',area:1.6,price:76000,st:'free'},{z:'A',r:5,n:10,o:'坐西朝东',area:1.6,price:76000,st:'sold'}],
+  B:[{z:'B',r:1,n:1,o:'坐西朝东',area:0.8,price:18000,st:'free'},{z:'B',r:1,n:2,o:'坐西朝东',area:0.8,price:18000,st:'free'},
+     {z:'B',r:2,n:7,o:'坐西北朝东南',area:0.8,price:16000,st:'free'},{z:'B',r:2,n:8,o:'坐西北朝东南',area:0.8,price:16000,st:'free'}],
+  C:[{z:'C',r:1,n:21,o:'坐北朝南',area:0.4,price:9000,st:'free'},{z:'C',r:1,n:22,o:'坐北朝南',area:0.4,price:9000,st:'free'},
+     {z:'C',r:2,n:15,o:'坐北朝南',area:0.4,price:9500,st:'sold'}]
+};
+
+/* ---------- 状态 ---------- */
+const S = {
+  tab:'map', layer:'poi', filtered:PARKS.slice(), selected:null,
+  compare:[], filters:{budget:30,dist:60,types:['立碑','生态','骨灰堂','海葬'],orients:[],others:[]},
+  route:null, routePlan:null, heatW:'price'
+};
+
+/* ---------- 工具 ---------- */
+function $(s,r){return (r||document).querySelector(s)}
+function $$(s,r){return Array.from((r||document).querySelectorAll(s))}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200)}
+function notice(m){const n=$('#notice');n.textContent=m;n.classList.add('show');clearTimeout(n._h);n._h=setTimeout(()=>n.classList.remove('show'),2600)}
+function money(n){return n===0?'免费':'¥'+n.toLocaleString('zh-CN')}
+function dist(a,b){const R=6371,d=Math.PI/180;const x=(b.lng-a.lng)*d*Math.cos((a.lat+b.lat)/2*d),y=(b.lat-a.lat)*d;return Math.round(Math.sqrt(x*x+y*y)*R*10)/10}
+function debounce(fn,ms){let t;return function(){clearTimeout(t);t=setTimeout(fn,ms)}}
+
+/* =========================================================
+   地图：腾讯地图 GL（失败自动降级 Canvas 底图）
+   ========================================================= */
+let mapIns=null, mkPOI=null, mkHome=null, heatLayer=null, polyLayer=null, polyEdge=null, lineLayer=null, routeLine=null, svcPOI=null, USING_TMAP=false;
+
+function tmapReady(){
+  if(!window._TMapUsable)return false;   // 无可用底图服务 → SDK 未加载
+  if(!window.TMap)return false;
+  return true;
+}
+/* 配置真实底图 Key：URL ?key=xxx，或点击工具条「🔑 底图 Key」保存到本机 localStorage */
+function setTMapKey(){
+  var k=prompt('粘贴腾讯位置服务 Key\n\n保存在本机浏览器 localStorage；留空则强制回到自绘示意底图。','');
+  if(k===null)return;
+  k=k.trim();
+  try{ localStorage.setItem('burywhere_tmap_key', k ? k : 'off'); }catch(e){}
+  location.reload();
+}
+function hexA(hex,a){
+  const h=expandHex(hex);
+  return 'rgba('+parseInt(h.slice(0,2),16)+','+parseInt(h.slice(2,4),16)+','+parseInt(h.slice(4,6),16)+','+a+')';
+}
+
+/* ---------- 夜间模式的配色预补偿 ----------
+   夜间滤镜 = invert(1) → hue-rotate(180deg)，是一步仿射变换：
+     c' = clamp( H · (255 - c) )
+   hue-rotate(180°) 的 3x3 矩阵 H（行和恰为 1）如下。把设计色先过一遍同一个变换，
+   再交给滤镜，两次抵消后屏幕上就是原来的设计色（饱和色会因 clamp 略有偏差，肉眼可忽略）。
+   这样做的意义：底图翻黑，但我们的标记/面/线仍然保持白天那套高对比配色，
+   图例不做滤镜也就天然一致。 */
+let NIGHT=false;   // 夜间模式开关（init 时按 URL / localStorage 决定）
+const NIGHT_HUE=[[-0.574,1.430,0.144],[0.426,0.430,0.144],[0.426,1.430,-0.856]];
+/* '#fff' 这类三位缩写要先展开成六位：否则 slice 出来是空串，parseInt 得到 NaN，
+   最终拼出一个 #NaNNaNNaN 的非法颜色，SDK 会静默丢弃该样式（borderColor 告警就是这么来的）。 */
+function expandHex(hex){
+  let h=String(hex).replace('#','').trim();
+  if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  return h;
+}
+function nightShift(hex){
+  const h=expandHex(hex);
+  const v=[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]
+    .map(n=>255-n);
+  return '#'+NIGHT_HUE.map(r=>{
+    const n=Math.round(r[0]*v[0]+r[1]*v[1]+r[2]*v[2]);
+    return Math.max(0,Math.min(255,n)).toString(16).padStart(2,'0');
+  }).join('');
+}
+function N(hex){ return NIGHT ? nightShift(hex) : hex; }
+/* 图例色块该填什么颜色，才能和「图上最终看到的颜色」一模一样。三种口径：
+   LG()  图形层（面/线/热力）：源色被 N() 预补偿过，再过一次滤镜 → 屏幕色 = nightShift(nightShift(色))
+   LGm() 标记填充：源色不加补偿，只过滤镜 → 屏幕色 = nightShift(色)
+   LG()  自绘底图模式：整体不过滤镜，图例就填本色 */
+function LG(hex){ return (NIGHT&&USING_TMAP) ? nightShift(nightShift(hex)) : hex; }
+function LGm(hex){ return (NIGHT&&USING_TMAP) ? nightShift(hex) : hex; }
+function initMap(){
+  if(tmapReady()){
+    try{
+      USING_TMAP=true;
+      mapIns=new TMap.Map('map',{zoom:10.4,center:new TMap.LatLng(22.635,114.140),pitch:0,showControl:false});
+      if(TMap.service) svcPOI=new TMap.service.Driving({policy:'LEAST_TIME'});
+      buildLayers();
+      // 起点层必须建在 POI 层之后：深圳市殡仪馆与吉田墓园只差约 600m，
+      // 后建的图层渲染在上，否则起点针会被墓园针压住看不见。
+      mkHome=new TMap.MultiMarker({map:mapIns,styles:{home:new TMap.MarkerStyle({width:34,height:42,anchor:{x:17,y:39},src:svgIcon(HC(),'殡')})},
+        geometries:[{id:'home',styleId:'home',position:new TMap.LatLng(HOME.lat,HOME.lng)}]});
+      return;
+    }catch(e){console.warn('TMap init failed',e)}
+  }
+  USING_TMAP=false;
+  $('#map').style.display='none';
+  $('#fbMap').style.display='block';
+  fitCanvas();
+  window.addEventListener('resize',()=>{fitCanvas();drawFallback()});
+  notice(location.protocol==='file:'?'本地 file 打开：已切换为示意底图，通过 http 预览将加载腾讯地图真实底图':'地图服务未就绪，已切换为示意底图（功能与交互一致）');
+}
+/* 标记图形：实心水滴针（白描边光晕 + 投影 + 白色类型字）。刻意不加白色内圆——
+   内圆会把针心"洗白"，小尺寸下颜色差异被削弱；白字直接压在色块上，颜色做主导信号。
+   shape='dot' 用于沿途服务点这类小标记。 */
+function svgIcon(color,glyph,shape){
+  /* 夜间模式下画布会走 invert(1)，白色会被翻成黑色：所以描边/文字改用纯黑
+     （#000 --invert--> #fff，滤镜后仍是白描边白字，标记边缘依旧清晰）。
+     fill 不做预补偿——让它被滤镜自然翻色，夜间反而更鲜亮（红→亮鲑红、紫→浅薰衣草）。
+     图例给标记色单独走 LGm()，保证"图上看到的颜色 == 图例颜色"。 */
+  /* 描边/文字用深色还是浅色，取决于「屏幕上这支针有多亮」而不是源色本身：
+     深色针配白字、浅色针配黑字（日间的墨黑选中针、夜间的白色选中针都得看清类型字）。
+     NIGHT 下源色会被 invert 翻一次，所以源色里要填反过来那一个。
+     服务点小圆点例外：不分昼夜都用本色描边（夜间 #000 会被翻成白），保持小点一致。 */
+  const ink = shape==='dot' ? (NIGHT?'#000000':'#ffffff') : inkFor(color);
+  if(shape==='dot'){
+    const ring = ink==='#ffffff' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.35)';
+    const d='<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">'
+      +'<circle cx="12" cy="12" r="9.5" fill="'+color+'" stroke="'+ink+'" stroke-width="3"/>'
+      +'<circle cx="12" cy="12" r="7.6" fill="'+color+'" stroke="'+ring+'" stroke-width="1"/></svg>';
+    return 'data:image/svg+xml,'+encodeURIComponent(d);
+  }
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">'
+    +'<defs><filter id="sh" x="-60%" y="-45%" width="220%" height="200%">'
+    +'<feDropShadow dx="0" dy="2" stdDeviation="1.6" flood-color="black" flood-opacity="0.55"/></filter></defs>'
+    +'<path filter="url(#sh)" d="M16 3.4C10.2 3.4 5.4 8.2 5.4 15c0 8.6 10.6 22 10.6 22s10.6-13.4 10.6-22c0-6.8-4.8-11.6-10.6-11.6z" '
+    +'fill="'+color+'" stroke="'+ink+'" stroke-width="3.4" stroke-linejoin="round"/>'
+    +'<text x="16" y="19.6" font-size="13" font-weight="700" text-anchor="middle" '
+    +'font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif" fill="'+ink+'">'+glyph+'</text></svg>';
+  return 'data:image/svg+xml,'+encodeURIComponent(svg);
+}
+/* 标记描边/文字该用白还是黑（返回的是"源色"，屏幕色由滤镜决定） */
+function inkFor(color){
+  const shown = NIGHT ? nightShift(color) : color;
+  const h=shown.replace('#','');
+  const lum=0.299*parseInt(h.substr(0,2),16)+0.587*parseInt(h.substr(2,2),16)+0.114*parseInt(h.substr(4,2),16);
+  return ((lum<150)!==NIGHT) ? '#ffffff' : '#000000';
+}
+/* 昼夜切换时重建 POI / 起点两套标记样式（图形是按当前配色生成的数据 URI，必须重生成） */
+function reskinMarkers(){
+  if(!USING_TMAP) return;
+  const styles={};
+  Object.keys(TYPE_COLOR).forEach(k=>{
+    styles[k]=new TMap.MarkerStyle({width:32,height:40,anchor:{x:16,y:37},src:svgIcon(TC(k),TYPE_GLYPH[k])});
+    styles['sel_'+k]=new TMap.MarkerStyle({width:42,height:52,anchor:{x:21,y:48},src:svgIcon(SEL_COLOR,TYPE_GLYPH[k])});
+  });
+  try{ mkPOI.setStyles(styles) }catch(e){
+    console.warn('setStyles 不可用，改为重建 POI 图层',e);
+    try{ mkPOI.setMap(null) }catch(_){}
+    mkPOI=null;buildLayers();
+  }
+  try{ mkHome.setStyles({home:new TMap.MarkerStyle({width:34,height:42,anchor:{x:17,y:39},src:svgIcon(HC(),'殡')})}) }catch(e){}
+}
+function toggleNight(){
+  NIGHT=!NIGHT;
+  try{ localStorage.setItem('burywhere_night',NIGHT?'1':'0') }catch(e){}
+  applyNight();
+  notice(NIGHT?'已切换为夜间暗黑底图':'已切换为日间底图');
+}
+function applyNight(){
+  document.body.classList.toggle('night',NIGHT);
+  const b=$('#nightBtn'); if(b) b.classList.toggle('on',NIGHT);
+  if(USING_TMAP){
+    reskinMarkers();
+    renderLayer();                 // 行政区/连线/热力的配色也会走 N()，重建一遍
+  } else {
+    drawFallback();                // 自绘底图直接按夜间配色重画，不需要滤镜
+  }
+  // 下葬路线（含沿途服务点）在另一个函数里按需绘制，也刷新一次
+  if(S.routePlans&&S.routePlan!=null){
+    const to=PARKS.find(p=>p.id===$('#rtTo').value);
+    if(to) drawRouteLine(to);
+  }
+}
+function buildLayers(){
+  if(!USING_TMAP) return;
+  const styles={};
+  Object.keys(TYPE_COLOR).forEach(k=>{
+    styles[k]=new TMap.MarkerStyle({width:32,height:40,anchor:{x:16,y:37},src:svgIcon(TC(k),TYPE_GLYPH[k])});
+    // 选中态：换成墨黑针 + 同类型字，尺寸放大，一眼看出"选中了哪个"
+    styles['sel_'+k]=new TMap.MarkerStyle({width:42,height:52,anchor:{x:21,y:48},src:svgIcon(SEL_COLOR,TYPE_GLYPH[k])});
+  });
+  mkPOI=new TMap.MultiMarker({map:mapIns,styles:styles,geometries:[]});
+  mkPOI.on('click',e=>{const p=PARKS.find(x=>x.id===e.geometry.id);if(p)selectPark(p)});
+}
+
+/* ---------- 渲染：POI ---------- */
+function renderPOI(){
+  if(USING_TMAP){
+    const gs=S.filtered.map(p=>({id:p.id,styleId:p.id===S.selected?('sel_'+p.type):p.type,position:new TMap.LatLng(p.lat,p.lng)}));
+    mkPOI.setGeometries(gs);
+  } else drawFallback();
+}
+/* ---------- 渲染：图层 ---------- */
+function renderLayer(){
+  if(USING_TMAP){
+    // 热力
+    if(S.layer==='heat'){
+      // 热力配色只在创建时生效，昼夜切换得整层重建（色带同样走 N() 预补偿，夜间仍是"低绿高红"）
+      if(heatLayer&&heatLayer._nb!==NIGHT){ try{heatLayer.setMap(null)}catch(e){}; heatLayer=null }
+      if(!heatLayer){
+        try{
+          heatLayer=new TMap.visualization.HeatMap({map:mapIns,styles:{heat:{radius:38,opacity:.72,gradient:[
+            hexA(N('#4A7C6F'),0),hexA(N('#C9A227'),.7),hexA(N('#D9703C'),.9),hexA(N('#B4453C'),1)]}}});
+          heatLayer._nb=NIGHT;
+        }catch(e){}
+      }
+      if(heatLayer){
+        heatLayer.setData(S.filtered.map(p=>({lng:p.lng,lat:p.lat,value:S.heatW==='price'?p.pmin/10000:(S.heatW==='vacancy'?(p.vacancy==='充足'?1:p.vacancy==='一般'?5:9):Math.round(p.rate*20))})));
+      }
+    } else if(heatLayer){ heatLayer.setData([]); }
+    // 行政区（面色块 + 独立描边：PolygonStyle 的 border 会被 SDK 按折线样式校验并报错）
+    if(S.layer==='district'){
+      const styles={},gs=[],bstyles={},bgs=[];
+      const score={'充足':0,'一般':1,'紧张':2};
+      Object.keys(DISTRICTS).forEach(d=>{
+        const ps=S.filtered.filter(p=>p.district===d);
+        const has=ps.length>0;
+        const lv=has?Math.max(...ps.map(p=>score[p.vacancy])):0;
+        const col=has?['#7BA05B','#C9A227','#B4453C'][lv]:'#9AA5A0';   // 该区无满足条件的墓园 → 灰色，不参与空位着色
+        styles[d]=new TMap.PolygonStyle({color:hexA(N(col),0.30),showBorder:false});
+        gs.push({id:d,styleId:d,paths:DISTRICTS[d].map(c=>new TMap.LatLng(c[1],c[0]))});
+        bstyles[d]=new TMap.PolylineStyle({color:N(col),width:2,lineCap:'round'});   // width 必须为整数，小数会被 SDK 判为非法
+        const ring=DISTRICTS[d].map(c=>new TMap.LatLng(c[1],c[0]));
+        ring.push(ring[0]);
+        bgs.push({id:'edge_'+d,styleId:d,paths:ring});
+      });
+      if(!polyLayer) polyLayer=new TMap.MultiPolygon({map:mapIns,styles:styles,geometries:gs});
+      else {polyLayer.setStyles(styles);polyLayer.setGeometries(gs)}
+      if(!polyEdge) polyEdge=new TMap.MultiPolyline({map:mapIns,styles:bstyles,geometries:bgs});
+      else {polyEdge.setStyles(bstyles);polyEdge.setGeometries(bgs)}
+    } else {
+      if(polyLayer) polyLayer.setGeometries([]);
+      if(polyEdge) polyEdge.setGeometries([]);
+    }
+    // 连线
+    if(S.layer==='line'){
+      const styles={ln:new TMap.PolylineStyle({color:N('#C9A227'),width:3,borderWidth:1,borderColor:N('#fff'),lineCap:'round'})};
+      const gs=S.filtered.map(p=>({id:p.id,styleId:'ln',paths:[new TMap.LatLng(HOME.lat,HOME.lng),new TMap.LatLng(p.lat,p.lng)]}));
+      if(!lineLayer) lineLayer=new TMap.MultiPolyline({map:mapIns,styles:styles,geometries:gs});
+      else {lineLayer.setStyles(styles);lineLayer.setGeometries(gs)}
+    } else if(lineLayer){ lineLayer.setGeometries([]) }
+    renderPOI();
+  } else drawFallback();
+  renderLegend();
+}
+function renderLegend(){
+  // 色块统一走 LG()：夜间下 TMap 图元会被滤镜翻色，图例必须填「滤镜后」的颜色才对得上
+  const L=$('#legend');
+  if(S.layer==='poi'){
+    L.innerHTML='<b>POI 打点 · 墓园类型</b>'+Object.keys(TYPE_COLOR).map(k=>'<div class="lg"><i style="background:'+LGm(TC(k))+'"></i>'+k+'</div>').join('')
+      +'<div class="lg"><i style="background:'+LGm(HC())+'"></i>出发点（起点）：深圳市殡仪馆</div>';
+  } else if(S.layer==='heat'){
+    L.innerHTML='<b>价格热力 · 起价（万元）</b><div style="height:10px;border-radius:3px;margin:6px 0 4px;background:linear-gradient(90deg,'+[
+      LG('#4A7C6F'),LG('#C9A227'),LG('#D9703C'),LG('#B4453C')].join(',')+')"></div><div style="display:flex;justify-content:space-between"><span>低</span><span>高</span></div>';
+  } else if(S.layer==='district'){
+    L.innerHTML='<b>行政区 · 空位紧张度</b>'+Object.keys(VAC_COLOR).map(k=>'<div class="lg"><i style="background:'+LG(VAC_COLOR[k])+'"></i>'+k+'</div>').join('')+'<div class="lg"><i style="background:'+LG('#9AA5A0')+'"></i>该区无匹配墓园</div>'+'<div style="margin-top:6px;color:#8A9A94">边界为示意形状，非测绘成果</div>';
+  } else {
+    L.innerHTML='<b>出发连线 · 直线距离</b><div class="lg"><i style="background:'+LG('#C9A227')+';height:3px;border-radius:2px"></i>起点 → 墓园</div><div class="lg"><i style="background:'+LGm(HC())+'"></i>起点：深圳市殡仪馆</div>';
+  }
+}
+
+/* ---------- 降级底图（Canvas） ---------- */
+const BBOX={minLng:113.74,maxLng:114.66,minLat:22.40,maxLat:22.88};
+function fitCanvas(){const c=$('#fbMap');const r=c.parentElement.getBoundingClientRect();c.width=r.width;c.height=r.height}
+function proj(lng,lat){const c=$('#fbMap');return [(lng-BBOX.minLng)/(BBOX.maxLng-BBOX.minLng)*c.width,(1-(lat-BBOX.minLat)/(BBOX.maxLat-BBOX.minLat))*c.height]}
+function drawFallback(){
+  const c=$('#fbMap'),x=c.getContext('2d'),W=c.width,H=c.height;
+  /* 自绘底图不套 CSS 滤镜（滤镜会把我们画在同一张 canvas 上的标记一起翻色），
+     所以这里的昼夜差别靠一套本色板直接画出来：夜间≈深蓝黑地 + 暗青水域 + 琥珀主干道。 */
+  const P = NIGHT
+    ? {land:'#0D141C',grid:'rgba(255,255,255,.05)',water:'#12222E',waterEdge:'#1B3242',
+       casing:'#101821',road:'#26333F',hw:'#3A3626',hwDash:'#8A7330',
+       edge:'rgba(122,148,162,.34)',label:'rgba(186,203,214,.82)',
+       cBg:'rgba(20,30,40,.85)',cEdge:'#3A4A58',cN:'#5CBBA0',cTxt:'#8D9CA8',text:'#D6E1E8',
+       link:'#DDB23F',route:'#6FD3B4'}
+    : {land:'#EAE7DF',grid:'rgba(255,255,255,.8)',water:'#CFE0E8',waterEdge:'#B4CAD6',
+       casing:'#FFFFFF',road:'#DCD8CE',hw:'#E8C98A',hwDash:'#C9A227',
+       edge:'rgba(146,158,152,.5)',label:'rgba(88,104,98,.9)',
+       cBg:'rgba(255,255,255,.85)',cEdge:'#8A9A94',cN:'#4A7C6F',cTxt:'#7A8A86',text:'#2C3A38',
+       link:'#C9A227',route:'#4A7C6F'};
+  x.clearRect(0,0,W,H);
+  x.fillStyle=P.land;x.fillRect(0,0,W,H);
+  // 次干路网（细）
+  x.strokeStyle=P.grid;x.lineWidth=1.1;
+  for(let i=0;i<80;i++){const a=proj(113.74+i*0.0116,22.40),b=proj(113.74+i*0.0116,22.88);x.beginPath();x.moveTo(a[0],a[1]);x.lineTo(b[0],b[1]);x.stroke()}
+  for(let i=0;i<42;i++){const a=proj(113.74,22.40+i*0.0116),b=proj(114.66,22.40+i*0.0116);x.beginPath();x.moveTo(a[0],a[1]);x.lineTo(b[0],b[1]);x.stroke()}
+  // 水域：珠江口 / 深圳湾 / 大鹏湾
+  SZ_WATER.forEach(pts=>{
+    x.beginPath();pts.forEach((p,i)=>{const q=proj(p[0],p[1]);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1])});
+    x.closePath();x.fillStyle=P.water;x.fill();x.strokeStyle=P.waterEdge;x.lineWidth=1;x.stroke();
+  });
+  // 主干道 / 高速骨架
+  SZ_ROADS.forEach(r=>{
+    const path=()=>{x.beginPath();r.pts.forEach((p,i)=>{const q=proj(p[0],p[1]);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1])});x.stroke()};
+    x.lineCap='round';x.strokeStyle=P.casing;x.lineWidth=r.w+2.4;path();
+    x.strokeStyle=r.w>=3.4?P.hw:P.road;x.lineWidth=r.w;path();
+    if(r.w>=3.4){x.strokeStyle=P.hwDash;x.lineWidth=1.1;x.setLineDash([9,7]);path();x.setLineDash([])}
+  });
+  // 区界（虚线）+ 区名
+  Object.keys(DISTRICTS).forEach(d=>{
+    x.beginPath();DISTRICTS[d].forEach((pt,i)=>{const q=proj(pt[0],pt[1]);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1])});
+    x.closePath();x.strokeStyle=P.edge;x.lineWidth=1;x.setLineDash([5,4]);x.stroke();x.setLineDash([]);
+  });
+  x.font='600 11px sans-serif';x.textAlign='center';x.fillStyle=P.label;
+  Object.keys(DISTRICT_LABEL).forEach(d=>{const q=proj(DISTRICT_LABEL[d][0],DISTRICT_LABEL[d][1]);x.fillText(d,q[0],q[1])});
+  // 指北针
+  const nx=W-30,ny=H-34;
+  x.fillStyle=P.cBg;x.beginPath();x.arc(nx,ny,15,0,7);x.fill();
+  x.strokeStyle=P.cEdge;x.lineWidth=1;x.stroke();
+  x.fillStyle=P.cN;x.beginPath();x.moveTo(nx,ny-11);x.lineTo(nx+4,ny+3);x.lineTo(nx-4,ny+3);x.closePath();x.fill();
+  x.fillStyle=P.cTxt;x.font='9px sans-serif';x.fillText('N',nx,ny+12);
+  // 行政区着色
+  if(S.layer==='district'){
+    const score={'充足':0,'一般':1,'紧张':2};
+    Object.keys(DISTRICTS).forEach(d=>{
+      const ps=S.filtered.filter(p=>p.district===d);
+      const lv=ps.length?Math.max(...ps.map(p=>score[p.vacancy])):-1;
+      const col=['#7BA05B','#C9A227','#B4453C'][lv]||'#C9C5BD';
+      x.beginPath();DISTRICTS[d].forEach((pt,i)=>{const q=proj(pt[0],pt[1]);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1])});
+      x.closePath();x.fillStyle=col+'55';x.fill();x.strokeStyle=col;x.lineWidth=1.6;x.stroke();
+    });
+  }
+  // 热力
+  if(S.layer==='heat'){
+    S.filtered.forEach(p=>{
+      const v=S.heatW==='price'?p.pmin:(S.heatW==='vacancy'?(p.vacancy==='充足'?1:p.vacancy==='一般'?5:9):p.rate*20);
+      const q=proj(p.lng,p.lat);const r=30+Math.min(46,v*2.2);
+      const g=x.createRadialGradient(q[0],q[1],0,q[0],q[1],r);
+      g.addColorStop(0,'rgba(180,69,60,.62)');g.addColorStop(.5,'rgba(201,162,39,.36)');g.addColorStop(1,'rgba(74,124,111,0)');
+      x.fillStyle=g;x.beginPath();x.arc(q[0],q[1],r,0,7);x.fill();
+    });
+  }
+  // 连线
+  if(S.layer==='line'){
+    const h=proj(HOME.lng,HOME.lat);
+    S.filtered.forEach(p=>{const q=proj(p.lng,p.lat);x.strokeStyle=P.link;x.lineWidth=2.4;x.setLineDash([7,5]);
+      x.beginPath();x.moveTo(h[0],h[1]);x.lineTo(q[0],q[1]);x.stroke();x.setLineDash([])});
+  }
+  // 下葬路线（降级模式同样绘制轨迹）
+  if(S.routePlans&&S.routePlan!=null){
+    const to=PARKS.find(p=>p.id===$('#rtTo').value);
+    const p=S.routePlans[S.routePlan];
+    if(to&&p){
+      const a=proj(HOME.lng,HOME.lat),b=proj(to.lng,to.lat);
+      const path=(p.polyline&&p.polyline.length)?p.polyline.map(q=>proj(q.lng||q[0],q.lat||q[1]))
+        :[a,[a[0]+(b[0]-a[0])*.35,a[1]+(b[1]-a[1])*.08],[a[0]+(b[0]-a[0])*.72,a[1]+(b[1]-a[1])*.72],b];
+      x.strokeStyle=P.route;x.lineWidth=5.5;x.lineJoin='round';x.lineCap='round';
+      x.beginPath();path.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));x.stroke();
+      const on=$$('#rtPoi .chip.on').map(c=>c.dataset.v);
+      const cols=SVC_COLOR;
+      on.forEach((k,i)=>{
+        const t=(i+1)/(on.length+1);const q=proj(HOME.lng+(to.lng-HOME.lng)*t+0.006,HOME.lat+(to.lat-HOME.lat)*t);
+        x.beginPath();x.arc(q[0],q[1],6,0,7);x.fillStyle=cols[k];x.fill();x.strokeStyle='#fff';x.lineWidth=2;x.stroke();
+      });
+    }
+  }
+  // 起点：水滴针（与真实底图上的标记保持同一视觉语言）
+  const h=proj(HOME.lng,HOME.lat);
+  drawPin(x,h[0],h[1],HOME_COLOR,'殡',1);
+  x.fillStyle=P.text;x.font='11px sans-serif';x.textAlign='center';x.fillText('起点',h[0],h[1]+19);
+  // POI
+  S.filtered.forEach(p=>{
+    const q=proj(p.lng,p.lat);const sel=p.id===S.selected;
+    drawPin(x,q[0],q[1],sel?SEL_COLOR:TYPE_COLOR[p.type],TYPE_GLYPH[p.type],sel?1.3:1);
+    x.fillStyle=P.text;x.font=(sel?'bold ':'')+'11px sans-serif';x.textAlign='center';
+    x.fillText(p.name,q[0],q[1]-14*(sel?1.3:1)-7);
+  });
+}
+/* Canvas 版水滴针：与 SVG 标记同形状（白描边光晕 + 投影 + 白内圆 + 类型字） */
+function drawPin(x,cx,by,color,glyph,s){
+  const r=7.5*s, top=by-24*s;            // by = 针尖
+  x.save();
+  x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=3.4*s;x.shadowOffsetY=1.6*s;
+  x.beginPath();x.arc(cx,top+r,r,0,Math.PI*2);
+  x.moveTo(cx-r,top+r);x.lineTo(cx,by);x.lineTo(cx+r,top+r);x.closePath();
+  x.fillStyle=color;x.fill();
+  x.restore();
+  x.beginPath();x.arc(cx,top+r,r,0,Math.PI*2);
+  x.moveTo(cx-r,top+r);x.lineTo(cx,by);x.lineTo(cx+r,top+r);x.closePath();
+  x.strokeStyle='#fff';x.lineWidth=3.4*s;x.lineJoin='round';x.stroke();
+  x.fillStyle='#fff';x.font='bold '+(13*s).toFixed(1)+'px "PingFang SC","Microsoft YaHei",sans-serif';x.textAlign='center';
+  x.fillText(glyph,cx,top+r+4.6*s);
+}
+
+/* =========================================================
+   筛选与列表
+   ========================================================= */
+function applyFilter(){
+  const f=S.filters;
+  const parks=PARKS.filter(p=>f.types.includes(p.type))
+    .filter(p=>p.pmin/10000<=f.budget)
+    .filter(p=>dist(HOME,p)<=f.dist)
+    .filter(p=>!f.orients.length||p.orient.some(o=>f.orients.includes(o)))
+    .filter(p=>!f.others.includes('公益性')||p.nat==='公益性')
+    .filter(p=>!f.others.includes('充足')||p.vacancy==='充足')
+    .filter(p=>!f.others.includes('高分')||p.rate>=4.6);
+  S.filtered=parks;
+  $('#cnt').textContent=parks.length+' / '+PARKS.length;
+  $('#emptyState').style.display=parks.length?'none':'block';
+  renderList();
+  renderLayer();
+  if(S.selected&&!parks.find(p=>p.id===S.selected)) closeDetail();
+}
+function renderList(){
+  $('#list').innerHTML=S.filtered.map(p=>{
+    const d=dist(HOME,p);
+    const inC=S.compare.includes(p.id);
+    return '<div class="card'+(S.selected===p.id?' on':'')+'" data-id="'+p.id+'">'+
+      '<div class="t">'+p.name+(inC?' <span class="tag gold">对比中</span>':'')+'</div>'+
+      '<div class="m"><span class="price">'+(p.pmin===0?'免费':money(p.pmin)+' 起')+'</span><span>'+d+' km</span><span>★ '+p.rate+'</span><span>空位 '+p.vacancy+'</span></div>'+
+      '<div>'+p.tags.slice(0,3).map(t=>'<span class="tag'+(t.indexOf('葬')>=0?' eco':'')+'">'+t+'</span>').join('')+'</div>'+
+      '<div class="btn-row"><button class="btn ghost" data-cmp="'+p.id+'">'+(inC?'取消对比':'加入对比')+'</button>'+
+      '<button class="btn" data-go="'+p.id+'">详情</button></div></div>';
+  }).join('');
+  $$('#list [data-id]').forEach(el=>el.addEventListener('click',e=>{
+    if(e.target.dataset.cmp){toggleCompare(e.target.dataset.cmp);e.stopPropagation();return}
+    if(e.target.dataset.go){selectPark(PARKS.find(p=>p.id===e.target.dataset.go));e.stopPropagation();return}
+    selectPark(PARKS.find(p=>p.id===el.dataset.id));
+  }));
+}
+function toggleCompare(id){
+  const i=S.compare.indexOf(id);
+  if(i>=0)S.compare.splice(i,1);
+  else if(S.compare.length>=3){toast('最多对比 3 处');return}
+  else S.compare.push(id);
+  $('#cmpCnt').textContent=S.compare.length+' / 3';
+  renderList();
+}
+function doCompare(){
+  if(S.compare.length<2){toast('请先选择至少 2 处墓园');return}
+  const ps=S.compare.map(id=>PARKS.find(p=>p.id===id));
+  const rows=[['起价',p=>p.pmin,p=>money(p.pmin),'min'],['距起点',p=>dist(HOME,p),p=>dist(HOME,p)+' km','min'],
+    ['评分',p=>p.rate,p=>'★ '+p.rate,'max'],['空位',p=>({'充足':3,'一般':2,'紧张':1})[p.vacancy],p=>p.vacancy,'max'],
+    ['性质',null,p=>p.nat,null],['可选朝向',null,p=>p.orient.join('、'),null]];
+  let html='<table class="cmp"><tr><th>对比项</th>'+ps.map(p=>'<th>'+p.name.replace(/·/g,'<br>')+'</th>').join('')+'</tr>';
+  rows.forEach(r=>{
+    let best=-1,bestScore=null;
+    if(r[1]){ps.forEach((p,i)=>{const v=r[1](p);if(bestScore===null||(r[3]==='min'?v<bestScore:v>bestScore)){bestScore=v;best=i}})}
+    html+='<tr><td>'+r[0]+'</td>'+ps.map((p,i)=>'<td class="'+(i===best?'best':'')+'">'+r[2](p)+'</td>').join('')+'</tr>';
+  });
+  html+='</table><div class="btn-row"><button class="btn" onclick="toast(\'已生成对比报告，可发送给家人\')">导出对比报告</button></div>';
+  $('#cmpResult').innerHTML=html;
+}
+function resetFilter(){
+  S.filters={budget:30,dist:60,types:['立碑','生态','骨灰堂','海葬'],orients:[],others:[]};
+  $('#budget').value=30;$('#budgetV').textContent='≤ 30万';
+  $('#dist').value=60;$('#distV').textContent='≤ 60km';
+  $$('#fType .chip').forEach(c=>c.classList.add('on'));
+  $$('#fOrient .chip,#fOther .chip').forEach(c=>c.classList.remove('on'));
+  applyFilter();notice('已放宽筛选条件');
+}
+
+/* ---------- 详情卡 ---------- */
+function selectPark(p){
+  S.selected=p.id;renderList();
+  if(USING_TMAP){mapIns.easeTo({center:new TMap.LatLng(p.lat,p.lng),zoom:13.4});renderPOI()}
+  else drawFallback();
+  const d=dist(HOME,p);
+  $('#detail').innerHTML='<div class="grab"></div>'+
+    '<h3>'+p.name+'<span class="tag'+(p.nat==='公益性'?' gray':'')+'">'+p.nat+'</span>'+(p.vacancy==='紧张'?'<span class="tag" style="background:#FBEAE8;color:#B4453C">空位紧张</span>':'')+'</h3>'+
+    '<div class="sub">'+p.district+' · '+p.tags.join(' · ')+'</div>'+
+    '<div class="kpis">'+
+      '<div class="kpi"><div class="k">起价</div><div class="v gold">'+(p.pmin===0?'免费':money(p.pmin))+'</div></div>'+
+      '<div class="kpi"><div class="k">距起点</div><div class="v">'+d+' km</div></div>'+
+      '<div class="kpi"><div class="k">评分</div><div class="v">★ '+p.rate+'</div></div>'+
+      '<div class="kpi"><div class="k">空位</div><div class="v" style="color:'+VAC_COLOR[p.vacancy]+'">'+p.vacancy+'</div></div>'+
+      '<div class="kpi"><div class="k">朝向</div><div class="v" style="font-size:13px">'+p.orient.join('/')+'</div></div>'+
+    '</div>'+
+    '<div class="quick">'+
+      '<button class="qb" data-q="3d"><span class="ico">🧭</span>3D 看墓</button>'+
+      '<button class="qb" data-q="fs"><span class="ico">⛰</span>AI 堪舆</button>'+
+      '<button class="qb" data-q="route"><span class="ico">🚙</span>下葬路线</button>'+
+      '<button class="qb" data-q="mem"><span class="ico">🕊</span>云祭扫</button>'+
+    '</div>'+
+    '<div class="btn-row"><button class="btn ghost" data-book="1">预约看墓</button><button class="btn" data-ask="1">在线咨询报价</button></div>';
+  $('#detail').classList.add('show');
+  $$('#detail [data-q]').forEach(b=>b.addEventListener('click',()=>{
+    const q=b.dataset.q;
+    if(q==='3d'){$('#v3Park').value=p.id;render3D();switchTab('view3d')}
+    if(q==='fs'){$('#fsPark').value=p.id;switchTab('fs')}
+    if(q==='route'){$('#rtTo').value=p.id;switchTab('route');planRoute()}
+    if(q==='mem')switchTab('mem');
+  }));
+  $('#detail [data-book]').addEventListener('click',()=>toast('已提交看墓预约：'+p.name+' · 明日 10:00 · 顾问 30 分钟内联系'));
+  $('#detail [data-ask]').addEventListener('click',()=>toast('已接入顾问，自动带上了「'+p.name+'」的上下文与分项报价单'));
+}
+function closeDetail(){S.selected=null;$('#detail').classList.remove('show');renderPOI();if(!USING_TMAP)drawFallback()}
+
+/* =========================================================
+   Tab 切换
+   ========================================================= */
+function switchTab(tab){
+  S.tab=tab;
+  $$('.tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===tab));
+  $$('.pane').forEach(p=>p.classList.toggle('on',p.dataset.pane===tab));
+  $$('.overlay').forEach(o=>o.classList.remove('show'));
+  const ov=$('.overlay[data-ov="'+tab+'"]');
+  if(ov&&['view3d','ar','mem','fs'].includes(tab)){
+    ov.classList.add('show');
+    if(tab==='ar')startAR(); else stopAR();
+    if(tab==='view3d')render3D();
+    if(tab==='mem')renderMem();
+  } else { stopAR(); $('#detail').classList.remove('show'); }
+  if(tab==='map'){renderLayer()}
+}
+
+/* =========================================================
+   M2 AI 风水堪舆
+   ========================================================= */
+const FS_STEPS=['正在读取地形水文…','正在比对廿四山坐向…','正在生成堪舆报告…'];
+function runFS(){
+  const pid=$('#fsPark').value;const p=PARKS.find(x=>x.id===pid);
+  $('#fsReport').innerHTML='';$('#fsLoading').style.display='block';
+  $('#fsTitle').textContent=' · '+p.name;
+  switchTab('fs');$('#fsLoading').style.display='block';$('#fsReport').innerHTML='';
+  let i=0;const iv=setInterval(()=>{$('#fsStep').textContent=FS_STEPS[i%3];i++},800);
+  setTimeout(()=>{clearInterval(iv);renderFS(p)},2600);
+}
+function renderFS(p){
+  $('#fsLoading').style.display='none';
+  const rnd=(a,b)=>Math.round(a+Math.random()*(b-a));
+  const base=p.vacancy==='紧张'?72:p.rate*16+8;
+  const dim={形势:Math.min(98,rnd(base-6,base+8)),朝向:rnd(78,96),水法:rnd(64,88),明堂:rnd(70,92),藏风:rnd(68,90)};
+  const total=Math.round(Object.values(dim).reduce((a,b)=>a+b,0)/5);
+  const readings=[
+    ['形势','背倚'+p.district.replace('区','')+'丘陵走势，坡度约 8°，属缓坡藏气之形，无直冲路桥。'],
+    ['朝向','所选'+$('#fsOrient').value+'，冬季日照时长约 3.8 小时，夏季通风良好，符合家属"背有靠山"偏好。'],
+    ['水法','园区东南侧有自然汇水沟渠，雨季径流方向由左向右，未见反弓直冲。'],
+    ['明堂','穴位前方约 12 米为开阔草坪，视野通达，祭扫动线宽敞，便于家族聚集。'],
+    ['藏风','左右两侧有绿化林带形成屏障，冬季西北风影响较小。']
+  ];
+  const good=['选 '+$('#fsOrient').value+' 的 A 区 3~5 排，与家属偏好匹配度最高','建议选高于地面 30cm 的穴位，雨季不易积水'];
+  const adj=['若在意夏季西晒，避开最西侧一排','管理费按年缴纳，签约前确认 20 年续期规则'];
+  const bad=['不建议选低于园区主路标高的穴位','不建议选紧邻园区主通道的位置（祭扫高峰人流穿行）'];
+  $('#fsReport').innerHTML=
+    '<div class="report">'+
+    '<div class="score-ring"><div class="ring" style="--p:'+(total/100)+'turn"><span>'+total+'</span></div>'+
+      '<div><div style="font-size:16px;font-weight:700">'+(total>=85?'综合优良':total>=75?'综合中等':'建议调整')+'</div>'+
+      '<div style="font-size:12.5px;color:var(--sub);margin-top:6px;line-height:1.7">'+p.name+'<br>'+$('#fsOrient').value+' · 生辰 '+$('#fsBirth').value+' '+$('#fsHour').value+'</div></div>'+
+      '<div style="margin-left:auto">'+radar(dim)+'</div></div>'+
+    '<div style="margin-top:18px">'+Object.keys(dim).map((k,i)=>
+      '<div class="card" style="cursor:default"><div class="t">'+k+' <span class="price">'+dim[k]+'</span></div><div style="font-size:12.5px;color:#3A4644;margin-top:7px;line-height:1.7">'+readings[i][1]+'</div></div>').join('')+'</div>'+
+    '<div style="margin-top:16px"><div class="sec-t">选穴建议</div><ul class="sugg">'+
+      good.map(s=>'<li class="g">'+s+'</li>').join('')+adj.map(s=>'<li class="w">'+s+'</li>').join('')+bad.map(s=>'<li class="b">'+s+'</li>').join('')+'</ul></div>'+
+    '<div class="disc">免责声明：本报告基于传统形势学文化习俗与公开地形数据生成，仅供情感与文化参考，<b>不构成任何吉凶、运势、祸福的预测或承诺</b>，不涉及医疗、投资建议，亦不作为交易依据。</div>'+
+    '<div class="btn-row"><button class="btn" onclick="applyFSToFilter()">应用到地图筛选</button><button class="btn ghost" onclick="toast(\'报告已导出 PDF\')">导出 PDF</button><button class="btn ghost" onclick="toast(\'已转接顾问，附报告 ID：FS-20261016-003\')">找顾问解读</button></div>'+
+    '</div>';
+}
+function radar(dim){
+  const keys=Object.keys(dim),n=keys.length,cx=92,cy=88,R=64;
+  const pt=(i,v)=>{const a=-Math.PI/2+i*2*Math.PI/n;return [cx+Math.cos(a)*R*v/100,cy+Math.sin(a)*R*v/100]};
+  let poly=keys.map((k,i)=>pt(i,dim[k]).join(',')).join(' ');
+  let grid=[25,50,75,100].map(v=>keys.map((k,i)=>pt(i,v).join(',')).join(' ')).map(s=>'<polygon points="'+s+'" fill="none" stroke="#E3E0D9"/>').join('');
+  let axis=keys.map((k,i)=>{const q=pt(i,118);return '<line x1="'+cx+'" y1="'+cy+'" x2="'+q[0]+'" y2="'+q[1]+'" stroke="#E3E0D9"/><text x="'+q[0]+'" y="'+(q[1]+4)+'" font-size="10.5" text-anchor="middle" fill="#7A8A86">'+k+'</text>'}).join('');
+  let dots=keys.map((k,i)=>{const q=pt(i,dim[k]);return '<circle cx="'+q[0]+'" cy="'+q[1]+'" r="3" fill="#4A7C6F"/>'}).join('');
+  return '<svg width="184" height="176">'+grid+axis+'<polygon points="'+poly+'" fill="rgba(74,124,111,.24)" stroke="#4A7C6F" stroke-width="2"/>'+dots+'</svg>';
+}
+function applyFSToFilter(){
+  const o=$('#fsOrient').value;
+  const map={'子山午向':'坐北朝南','癸山丁向':'坐北朝南','午山子向':'坐北朝南','艮山坤向':'坐东北朝西南','坤山艮向':'坐东北朝西南','卯山酉向':'坐西朝东','酉山卯向':'坐西朝东','巽山乾向':'坐西北朝东南','乾山巽向':'坐西北朝东南'};
+  const want=map[o];
+  $$('#fOrient .chip').forEach(c=>c.classList.toggle('on',c.dataset.v===want));
+  S.filters.orients=want?[want]:[];
+  applyFilter();switchTab('map');notice('已按报告建议筛选：'+want);
+}
+function showHistory(){toast('历史报告 3 份：FS-20261016-001 / 002 / 003')}
+
+/* =========================================================
+   M3 3D 看墓
+   ========================================================= */
+function render3D(){
+  const pid=$('#v3Park').value||'p01';const p=PARKS.find(x=>x.id===pid);
+  $('#v3Title').textContent=p.name;
+  const zone=($('#v3Zone .chip.on')||{}).dataset?$('#v3Zone .chip.on').dataset.v:'A';
+  const gs=GRAVES[zone]||[];
+  const deco='<div class="dec road"></div><div class="dec water"></div>'+
+    '<div class="dec green" style="left:36px;top:322px;width:134px;height:112px"></div>'+
+    '<div class="dec green" style="left:620px;top:322px;width:120px;height:112px"></div>'+
+    '<div class="dec gate"></div>'+
+    '<div class="dec tag" style="left:26px;top:176px">入口 · 停车场</div>'+
+    '<div class="dec tag" style="left:566px;top:32px">景观池</div>'+
+    '<div class="dec tag" style="left:186px;top:82px">'+zone+' 区 · '+(zone==='A'?'立碑区':(zone==='B'?'生态葬区':'壁葬区'))+'</div>';
+  $('#ground').innerHTML=deco+gs.map((g,i)=>{
+    const left=210+(i%3)*160+'px', top=150+Math.floor(i/3)*200+'px';
+    return '<div class="tomb '+(g.st==='sold'?'sold':'free')+'" data-i="'+i+'" style="left:'+left+';top:'+top+'"><div class="stone">'+g.z+g.r+'-'+g.n+'<br>'+(g.st==='sold'?'已售':'可选')+'</div></div>';
+  }).join('');
+  renderTombShadow();
+  $('#v3List').innerHTML=gs.map((g,i)=>'<div class="card" data-i="'+i+'"><div class="t">'+g.z+' 区 '+g.r+' 排 '+g.n+' 号'+(g.st==='sold'?'<span class="tag gray">已售出</span>':'<span class="tag">可选</span>')+'</div>'+
+    '<div class="m"><span class="price">'+money(g.price)+'</span><span>'+g.o+'</span><span>'+g.area+' ㎡</span></div></div>').join('');
+  $$('#v3List .card').forEach(el=>el.addEventListener('click',()=>selectTomb(+el.dataset.i)));
+  $$('#ground .tomb').forEach(el=>el.addEventListener('click',()=>selectTomb(+el.dataset.i)));
+  selectTomb(0);
+}
+function selectTomb(i){
+  const zone=$('#v3Zone .chip.on').dataset.v;const g=(GRAVES[zone]||[])[i];if(!g)return;
+  $$('#ground .tomb').forEach((el,k)=>el.classList.toggle('sel',k===i));
+  $$('#v3List .card').forEach((el,k)=>el.classList.toggle('on',k===i));
+  const fee=Math.round(g.price*0.012);
+  $('#v3Info').innerHTML='<div class="report"><div class="score-ring">'+
+    '<div><div style="font-size:16px;font-weight:700">'+g.z+' 区 '+g.r+' 排 '+g.n+' 号</div>'+
+    '<div class="kpis" style="border:0;margin:10px 0 0;padding:0;gap:26px">'+
+      '<div><div class="k">葬式</div><div class="v" style="font-size:14px">'+({A:'立碑',B:'生态葬',C:'壁葬'})[g.z]+'</div></div>'+
+      '<div><div class="k">朝向</div><div class="v" style="font-size:14px">'+g.o+'</div></div>'+
+      '<div><div class="k">面积</div><div class="v" style="font-size:14px">'+g.area+' ㎡</div></div>'+
+      '<div><div class="k">墓位费</div><div class="v gold">'+money(g.price)+'</div></div>'+
+      '<div><div class="k">管理费/年</div><div class="v" style="font-size:14px">'+money(fee)+'</div></div>'+
+    '</div></div></div>'+
+    '<div class="btn-row"><button class="btn" onclick="toast(\'已锁定 '+g.z+'-'+g.r+'-'+g.n+' 24 小时，倒计时已开始\')">锁定 24 小时</button>'+
+    '<button class="btn ghost" onclick="toast(\'已加入对比\')">加入对比</button>'+
+    '<button class="btn ghost" onclick="switchTab(\'map\')">回到地图</button></div></div>';
+}
+function renderTombShadow(){
+  const h=+$('#sun').value;
+  const ang=(h-6)/12*180;
+  const rad=ang*Math.PI/180;
+  const dx=Math.round(Math.cos(rad)*7),dy=Math.round(4+Math.abs(Math.sin(rad))*5);
+  const blur=8+Math.round(Math.abs(12-h)*1.2);
+  $$('#ground .tomb').forEach(el=>{el.style.setProperty('--sh',dx+'px '+dy+'px '+blur+'px rgba(70,80,60,'+(0.10+Math.abs(12-h)*0.012)+')')});
+  const times={6:'06:00 · 春分',9:'09:00 · 春分',12:'12:00 · 春分',15:'15:00 · 秋分',18:'18:00 · 冬至'};
+  $('#sunV').textContent=(h<10?'0':(h<13?'0':''))+h+':00 · '+(h<9?'日出后':(h>16?'日落前':'正午前后'))+' · 日照约 '+Math.max(0,Math.round((18-Math.max(h,7))*48/60))+' 分钟';
+}
+
+/* =========================================================
+   M4 路线规划
+   ========================================================= */
+function planRoute(){
+  const to=PARKS.find(p=>p.id===$('#rtTo').value);
+  if(!to){toast('请先在地图选择墓园');return}
+  const box=$('#rtPlans');
+  box.innerHTML='<div class="empty">正在调用驾车路径服务…</div>';
+  const policies=[['LEAST_TIME','最快','推荐'],['LEAST_DISTANCE','最短','省里程'],['AVOID_HIGHWAY','避高速','平稳']];
+  const d=dist(HOME,to);
+  const mk=(p,tag,badge)=>({policy:p,tag:tag,badge:badge,
+    dur:Math.round(d*(p==='LEAST_TIME'?1.5:p==='LEAST_DISTANCE'?1.7:1.9))+ (p==='AVOID_HIGHWAY'?6:0),
+    km:Math.round(d*(p==='LEAST_DISTANCE'?1.15:1.28)*10)/10,
+    lights:Math.round(d*(p==='AVOID_HIGHWAY'?0.42:0.3))});
+  const plans=policies.map(x=>mk(x[0],x[1],x[2]));
+  plans.forEach(p=>p.est=true);
+  S.routePlan=0;
+  const drawPlans=()=>{
+    S.routePlans=plans;
+    box.innerHTML=plans.map((p,i)=>'<div class="plan'+(i===S.routePlan?' on':'')+'" data-i="'+i+'">'+
+      '<div class="r1"><b>'+p.tag+'路线 <span class="tag'+(i===0?'':' gray')+'">'+p.badge+'</span></b><em>'+p.dur+'<span style="font-size:11px;font-weight:400"> 分钟</span></em></div>'+
+      '<div class="r2">'+p.km+' km · 红灯约 '+p.lights+' 个 · '+(i===2?'避开高速与快速路':'经城市快速路')+
+      (p.est?' · 按直线距离估算':' · <b style="color:#4A7C6F">实时路径服务</b>')+'</div></div>').join('');
+    $$('#rtPlans .plan').forEach(el=>el.addEventListener('click',()=>{
+      $$('#rtPlans .plan').forEach(x=>x.classList.remove('on'));el.classList.add('on');
+      S.routePlan=+el.dataset.i;drawRouteLine(to);renderConvoy(plans[S.routePlan],to);
+    }));
+    drawRouteLine(to);renderConvoy(plans[S.routePlan],to);
+  };
+  drawPlans();
+  if(USING_TMAP){
+    policies.forEach((x,idx)=>{
+      try{
+        const svc=new TMap.service.Driving({policy:x[0]});
+        const pr=svc.getDirection({from:new TMap.LatLng(HOME.lat,HOME.lng),to:new TMap.LatLng(to.lat,to.lng)});
+        if(pr&&pr.then)pr.then(res=>{
+          const r=res&&res.result&&res.result.routes&&res.result.routes[0];
+          if(r){
+            const du=r.duration||0;
+            plans[idx].dur=Math.max(1,Math.round(du>600?du/60:du));
+            plans[idx].km=Math.round((r.distance/1000)*10)/10;
+            plans[idx].polyline=r.polyline;plans[idx].est=false;drawPlans();
+          }
+        }).catch(()=>{});
+      }catch(e){}
+    });
+  }
+}
+function drawRouteLine(to){
+  if(!USING_TMAP) {drawFallback();return}
+  const p=S.routePlans[S.routePlan];
+  const pts=p&&p.polyline&&p.polyline.length?p.polyline:[new TMap.LatLng(HOME.lat,HOME.lng),new TMap.LatLng(to.lat,to.lng)];
+  /* 夜间想让屏幕上出现"亮青绿主线 + 暗描边"：主线源色取亮青绿的逆变换，
+     描边源色取纯白（#fff --invert--> #000，落在暗底上正好是一道压边）。 */
+  const rstyle={r:new TMap.PolylineStyle({
+    color: NIGHT ? N('#4ABFAA') : '#4A7C6F',
+    width:7, borderWidth:2, borderColor: NIGHT ? '#ffffff' : '#fff', lineCap:'round'})};
+  if(!routeLine) routeLine=new TMap.MultiPolyline({map:mapIns,styles:rstyle,geometries:[]});
+  else routeLine.setStyles(rstyle);
+  routeLine.setGeometries([{id:'r',styleId:'r',paths:pts}]);
+  // 视野包裹全部路径点（不能直接拿首尾点当 sw/ne：起点不一定在西南角）
+  let sLat=pts[0].getLat(), nLat=sLat, wLng=pts[0].getLng(), eLng=wLng;
+  pts.forEach(q=>{const a=q.getLat(),o=q.getLng();if(a<sLat)sLat=a;if(a>nLat)nLat=a;if(o<wLng)wLng=o;if(o>eLng)eLng=o});
+  try{mapIns.fitBounds(new TMap.LatLngBounds(new TMap.LatLng(sLat,wLng),new TMap.LatLng(nLat,eLng)),{padding:90})}catch(e){}
+  // 沿途服务点
+  const on=$$('#rtPoi .chip.on').map(c=>c.dataset.v);
+  svcMarks(on,to);
+}
+function svcMarks(on,to){
+  const seed=Object.keys(SVC_COLOR).map(k=>[k,SVC_COLOR[k]]).filter(x=>on.includes(x[0]));
+  if(USING_TMAP){
+    if(window._svcLayer){try{window._svcLayer.setMap(null)}catch(e){};window._svcLayer=null}
+    const styles={};Object.keys(SVC_COLOR).forEach(k=>styles[k]=new TMap.MarkerStyle({width:24,height:24,anchor:{x:12,y:12},src:svgIcon(SVC_COLOR[k],'','dot')}));
+    window._svcLayer=new TMap.MultiMarker({map:mapIns,styles:styles,geometries:[]});
+  }
+  if(!window._svcLayer){return}
+  const gs=[];seed.forEach((s,i)=>{
+    const t=i/(seed.length+1);
+    gs.push({id:s[0]+i,styleId:s[0],position:new TMap.LatLng(HOME.lat+(to.lat-HOME.lat)*t,HOME.lng+(to.lng-HOME.lng)*t+0.02)});
+  });
+  window._svcLayer.setGeometries(gs);
+}
+function renderConvoy(p,to){
+  const t=$('#rtTime').value.replace('T',' ');
+  const total=p.dur*1.3+30;
+  const fmt=m=>{const h=((Math.floor(m/60)%24)+24)%24,mi=Math.round(((m%60)+60)%60)%60;return (h<10?'0':'')+h+':'+(mi<10?'0':'')+mi};
+  const base=10*60+30;
+  const groups=[['主车（遗体/直系）',base-total,3],['亲属车',base-total+12,2],['宾客车',base-total+25,1]];
+  $('#rtConvoy').innerHTML='<div class="sec-t">车队时刻表 <span style="font-weight:400">吉时 '+t+' 倒推</span></div>'+
+    '<div class="card" style="cursor:default"><div class="t">吉时 '+t+' · 全程预留 '+Math.round(total)+' 分钟</div>'+
+    '<div class="m"><span>路程 '+p.dur+' 分钟</span><span>冗余 ×1.3</span><span>仪式预留 30 分钟</span></div></div>'+
+    '<div class="timetable">'+groups.map(g=>'<div class="tt"><div class="tm">'+fmt(g[1])+'</div><div><div class="who">'+g[0]+' · '+g[2]+' 辆</div>'+
+      '<div class="w">集合点：深圳市殡仪馆 正门 · 路线：'+(p.tag||'推荐')+'路线 · 负责人 李雯 138****6721</div></div></div>').join('')+'</div>'+
+    '<button class="btn gold" onclick="toast(\'已生成家族群分享：链接 + 口令 7K3P9Q，成员可查看集合点与出发时刻\')">分享到家族群</button>';
+}
+
+/* =========================================================
+   M5 AR 环保烧纸
+   ========================================================= */
+let arRAF=null,arParts=[],arPts=0,arMode='money',arCandles=0;
+function startAR(){
+  const c=$('#arCanvas'),r=c.parentElement.getBoundingClientRect();
+  c.width=r.width;c.height=r.height;
+  const x=c.getContext('2d');
+  const paintBg=()=>{
+    const g=x.createLinearGradient(0,0,0,c.height);
+    g.addColorStop(0,'#2E443B');g.addColorStop(.55,'#3E5A4C');g.addColorStop(1,'#5A6A50');
+    x.fillStyle=g;x.fillRect(0,0,c.width,c.height);
+    // 地面
+    x.fillStyle='rgba(30,42,34,.55)';x.beginPath();x.moveTo(0,c.height*.62);x.bezierCurveTo(c.width*.3,c.height*.58,c.width*.7,c.height*.68,c.width,c.height*.6);x.lineTo(c.width,c.height);x.lineTo(0,c.height);x.fill();
+    // 墓碑
+    const bx=c.width/2,by=c.height*.62;
+    x.fillStyle='#D9D5CB';x.fillRect(bx-42,by-96,84,96);
+    x.fillStyle='#B9B4A8';x.fillRect(bx-52,by-104,104,10);
+    x.fillStyle='#6C6A62';x.font='13px sans-serif';x.textAlign='center';
+    x.fillText('李 国 栋',bx,by-56);x.fillText('1948 — 2026',bx,by-36);
+    // 电子烛
+    for(let i=0;i<arCandles;i++){
+      const cx=bx-40+i*80,cy=by-6;
+      x.fillStyle='#F2EAD6';x.fillRect(cx-7,cy-24,14,24);
+      const fl=x.createRadialGradient(cx,cy-30,0,cx,cy-30,16);
+      fl.addColorStop(0,'rgba(255,236,170,.95)');fl.addColorStop(1,'rgba(255,200,80,0)');
+      x.fillStyle=fl;x.beginPath();x.arc(cx,cy-30,16,0,7);x.fill();
+    }
+  };
+  const loop=()=>{
+    paintBg();
+    arParts.forEach(p=>{
+      p.x+=p.vx+Math.sin(p.t*.05)*.8;p.y+=p.vy;p.t++;p.rot+=p.vr;
+      if(p.y>p.gy){p.vy=0;p.vx*=.9;p.alpha-=0.012}
+      x.save();x.globalAlpha=Math.max(0,p.alpha);x.translate(p.x,p.y);x.rotate(p.rot);
+      if(p.kind==='money'){
+        x.fillStyle='#F0E4C4';x.fillRect(-8,-5,16,10);x.strokeStyle='#C9A227';x.lineWidth=1;x.strokeRect(-8,-5,16,10);
+        x.fillStyle='#C9A227';x.fillRect(-2,-2,4,4);
+      } else if(p.kind==='yuanbao'){
+        x.fillStyle='#E8D9A8';x.beginPath();x.ellipse(0,0,10,7,0,0,7);x.fill();
+        x.strokeStyle='#B99A3C';x.stroke();
+      } else {
+        x.fillStyle='#FFFFFF';x.beginPath();x.ellipse(0,0,3.5,6,p.rot,0,7);x.fill();
+      }
+      x.restore();
+    });
+    arParts=arParts.filter(p=>p.alpha>0&&p.y<c.height+40);
+    arRAF=requestAnimationFrame(loop);
+  };
+  if(!arRAF)arRAF=requestAnimationFrame(loop);
+  $('#arCanvas').onpointerdown=e=>{
+    const r=c.getBoundingClientRect();
+    const spawn=()=>{
+      for(let i=0;i<3;i++){
+        arParts.push({x:e.clientX-r.left+(Math.random()*40-20),y:e.clientY-r.top+(Math.random()*20-10),
+          vx:(Math.random()*1.6-.8),vy:1.1+Math.random()*1.4,vr:(Math.random()*.16-.08),rot:Math.random()*3,
+          t:Math.random()*100,alpha:1,gy:c.height*.66+Math.random()*(c.height*.3),
+          kind:arMode==='candle'?'flower':(arMode==='tree'?'flower':arMode)});
+      }
+      arPts+=3;arPts=Math.min(arPts,999);
+      $('#arPts').textContent=arPts;$('#arPts2').textContent=arPts;
+      $('#arPm').textContent=(arPts*1.7).toFixed(1);$('#arSheets').textContent=arPts*4;
+    };
+    spawn();const iv=setInterval(()=>{if(!$('#arCanvas')._down)clearInterval(iv);else spawn()},90);
+    $('#arCanvas')._down=true;
+    const up=()=>{clearInterval(iv);$('#arCanvas')._down=false;window.removeEventListener('pointerup',up)};
+    window.addEventListener('pointerup',up);
+  };
+}
+function stopAR(){if(arRAF){cancelAnimationFrame(arRAF);arRAF=null}}
+function arClear(){arParts=[];arCandles=0;arPts=0;$('#arPts').textContent=0;$('#arPts2').textContent=0;$('#arPm').textContent=0;$('#arSheets').textContent=0}
+function arWishTree(){
+  const w=$('#arWish').value.trim()||'爸，我们都挺好的，勿念。';
+  arMode='tree';arParts=[];
+  for(let i=0;i<26;i++)arParts.push({x:($('#arCanvas').width||600)*(.3+Math.random()*.4),y:80+Math.random()*120,
+    vx:Math.random()*.6-.3,vy:.6+Math.random(),vr:.02,rot:0,t:0,alpha:1,gy:($('#arCanvas').height||400)*.68,kind:'flower'});
+  toast('心愿已挂上心愿树：“'+w+'”（累计 10 条可兑换实体树苗）');
+}
+
+/* =========================================================
+   M6 云祭扫
+   ========================================================= */
+const MEM_MSGS=[['李雯','爸，今天深圳降温了，您那边记得添衣。我们都好。','3 小时前'],
+  ['李强（杭州）','没能赶回去，点了支烛。下个月一定去看您。','昨天 21:14'],
+  ['陈静','爸，小宝会叫爷爷了，等清明带他去看您。','3 天前'],
+  ['代客祭扫 · 服务者 张明','已完成清扫与献花，碑面擦拭干净，回传照片 6 张。','42 天前']];
+function renderMem(){
+  $('#msgs').innerHTML=MEM_MSGS.map(m=>'<div class="msg">'+m[1]+'<div class="by">— '+m[0]+' · '+m[2]+'</div></div>').join('');
+}
+$$('.act').forEach(b=>b.addEventListener('click',()=>{
+  const kind=b.querySelector('.cnt').dataset.cnt;
+  const el=document.createElement('div');el.className='item';el.textContent=b.querySelector('.ico').textContent;
+  $('#anchor').appendChild(el);
+  setTimeout(()=>el.remove(),4200);
+  const cntEl=b.querySelector('.cnt');cntEl.textContent=+cntEl.textContent+1;
+  if(kind==='msg'){
+    const t=prompt('写下想说的话：','爸，我们都挺好的。');
+    if(t){MEM_MSGS.unshift(['李雯（我）',t,'刚刚']);renderMem();toast('留言已上墙，先审后发')}
+  } else toast(b.dataset.act+' 已完成，祭扫记录已同步给家人');
+}));
+function jumpToGrave(){
+  switchTab('map');
+  const p=PARKS.find(x=>x.id==='p01');
+  setTimeout(()=>{selectPark(p);notice('已定位到墓位：报恩福地墓园 A 区 3 排 12 号')},260);
+}
+
+/* =========================================================
+   初始化
+   ========================================================= */
+function readNightPref(){
+  try{
+    const q=new URLSearchParams(location.search).get('night');
+    if(q!==null) return !(q==='0'||q==='off');          // ?night=0 可强制日间
+    const s=localStorage.getItem('burywhere_night');
+    if(s!==null) return s==='1';
+  }catch(e){}
+  return true;   // 默认夜间暗黑底图（可用右上角「🌙 夜间模式」切回日间）
+}
+function init(){
+  // 夜间模式必须在建图层之前定下来：标记/面/线的颜色建的时候就做了预补偿
+  NIGHT=readNightPref();
+  document.body.classList.toggle('night',NIGHT);
+
+  // 下拉填充
+  const opts=PARKS.map(p=>'<option value="'+p.id+'">'+p.name+'（'+money(p.pmin)+'起）</option>').join('');
+  $('#fsPark').innerHTML=opts;$('#v3Park').innerHTML=opts;$('#rtTo').innerHTML=opts;
+  $('#fsPark').value='p01';$('#v3Park').value='p01';$('#rtTo').value='p01';
+
+  // tab
+  $$('.tab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
+
+  // 图层
+  $$('.tool[data-layer]').forEach(b=>b.addEventListener('click',()=>{
+    $$('.tool[data-layer]').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+    S.layer=b.dataset.layer;
+    if(S.layer==='heat')notice('热力图层：以墓位起价为权重（演示）');
+    if(S.layer==='district')notice('行政区着色：按空位紧张度（充足→紧张）');
+    if(S.layer==='line')notice('起点连线：直线距离，实际车程见「下葬路线规划」');
+    renderLayer();
+  }));
+
+  // 筛选
+  $('#budget').addEventListener('input',e=>{const v=+e.target.value;$('#budgetV').textContent=v>=30?'≤ 30万':'≤ '+v+'万';S.filters.budget=v;applyFilter()});
+  $('#dist').addEventListener('input',e=>{const v=+e.target.value;$('#distV').textContent='≤ '+v+'km';S.filters.dist=v;applyFilter()});
+  [['#fType','types'],['#fOrient','orients'],['#fOther','others']].forEach(x=>{
+    $$(x[0]+' .chip').forEach(c=>c.addEventListener('click',()=>{
+      c.classList.toggle('on');
+      S.filters[x[1]]=$$(x[0]+' .chip.on').map(k=>k.dataset.v);
+      applyFilter();
+    }));
+  });
+
+  // 3D
+  $('#v3Park').addEventListener('change',render3D);
+  $$('#v3Zone .chip').forEach(c=>c.addEventListener('click',()=>{
+    $$('#v3Zone .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');render3D();
+  }));
+  $('#sun').addEventListener('input',renderTombShadow);
+
+  // 路线
+  $$('#rtPoi .chip').forEach(c=>c.addEventListener('click',()=>{
+    c.classList.toggle('on');
+    if(S.routePlans&&S.routePlan!=null){const to=PARKS.find(p=>p.id===$('#rtTo').value);drawRouteLine(to)}
+  }));
+
+  // AR
+  $$('#arMode .chip').forEach(c=>c.addEventListener('click',()=>{
+    $$('#arMode .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');arMode=c.dataset.v;
+    if(arMode==='candle'){arCandles=Math.min(arCandles+1,4);toast('已点亮电子烛（'+arCandles+' 盏），可设置燃烧时长 1/12/24 小时')}
+  }));
+  $$('.ar .acts button').forEach(b=>b.addEventListener('click',()=>{
+    $$('.ar .acts button').forEach(x=>x.classList.remove('on'));b.classList.add('on');arMode=b.dataset.ar;
+    if(arMode==='candle'){arCandles=Math.min(arCandles+1,4);toast('已点亮电子烛（'+arCandles+' 盏）')}
+    if(arMode==='tree')arWishTree();
+  }));
+
+  initMap();
+  $('#scalebar').textContent = USING_TMAP ? 'GCJ-02 · 腾讯位置服务 · 墓园坐标取自真实 POI，价格/空位为示例数据' : 'GCJ-02 · 自绘示意底图 · 价格/空位为示例数据';
+  const nb=$('#nightBtn'); if(nb) nb.classList.toggle('on',NIGHT);
+  applyFilter();
+  render3D();renderMem();
+  $('#fsReport').innerHTML='<div class="empty"><div class="big">⛰</div>在左侧填写逝者信息与坐向，点击「开始堪舆」生成报告<br><span style="font-size:11.5px">报告仅供文化习俗参考，不构成任何吉凶承诺</span></div>';
+}
+window.addEventListener('load',init);
+</script>
+</body>
+</html>

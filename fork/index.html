@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>岔路 · THE FORK —— 你换的那条路，其实还是原来那条</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --ink:#151a22; --ink2:#4a5464; --ink3:#8892a0;
+  --line:#e3e7ed; --line2:#eef1f5; --accent:#c0392b; --accent2:#1f6feb;
+  --warm:#e8f1ff; --shadow:0 1px 2px rgba(20,28,40,.05),0 6px 20px rgba(20,28,40,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:14px; line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1240px;margin:0 auto;padding:20px 18px 40px}
+
+header.hd{margin-bottom:16px}
+.hd .kicker{font-size:12px;letter-spacing:.22em;color:var(--ink3);text-transform:uppercase}
+.hd h1{margin:4px 0 6px;font-size:27px;line-height:1.25;letter-spacing:-.01em;font-weight:700}
+.hd h1 .en{font-size:12px;letter-spacing:.18em;color:var(--ink3);font-weight:500;margin-left:10px;vertical-align:3px}
+.hd .sub{margin:0;color:var(--ink2);font-size:14px;max-width:860px}
+.hd .sub b{color:var(--ink);font-weight:600}
+
+.controls{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow);margin-bottom:14px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 0}
+.row + .row{border-top:1px dashed var(--line2)}
+.row .lab{font-size:12px;color:var(--ink3);min-width:96px;flex:0 0 auto}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{
+  border:1px solid var(--line);background:#fbfcfd;color:var(--ink2);
+  padding:5px 11px;border-radius:999px;font-size:13px;cursor:pointer;transition:.15s;
+  font-family:inherit;
+}
+.chip:hover{border-color:#c9d2de;color:var(--ink)}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.tog{display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--ink2);cursor:pointer;user-select:none}
+.tog input{margin:0;accent-color:var(--accent2)}
+.hint{font-size:12px;color:var(--ink3)}
+
+main.grid{display:grid;grid-template-columns:minmax(0,1.28fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:900px){ main.grid{grid-template-columns:minmax(0,1fr)} }
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.card .ch{padding:10px 14px;border-bottom:1px solid var(--line2);font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.card .ch .r{font-size:11px;color:var(--ink3);font-weight:400}
+
+#map{width:100%;height:470px;background:#eaeef3}
+.mapnote{padding:8px 14px;font-size:11.5px;color:var(--ink3);border-top:1px solid var(--line2)}
+
+.ribwrap{padding:10px 14px;border-top:1px solid var(--line2)}
+.ribwrap .t{font-size:12px;color:var(--ink2);margin-bottom:5px}
+.ribwrap .t b{color:var(--ink)}
+#ribbon{width:100%;height:64px;display:block}
+
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line2)}
+.kpi{background:#fff;padding:12px 14px}
+.kpi .n{font-size:25px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.15}
+.kpi .n small{font-size:13px;font-weight:600;color:var(--ink2);margin-left:2px}
+.kpi .k{font-size:11.5px;color:var(--ink3);margin-top:2px}
+.kpi.hl .n{color:var(--accent)}
+.kpi.hl2 .n{color:var(--accent2)}
+
+.anchorbox{padding:11px 14px;border-bottom:1px solid var(--line2);background:#fbfcfd}
+.anchorbox .t{font-size:12px;color:var(--ink3)}
+.anchorbox .v{font-size:15px;font-weight:600;margin-top:2px}
+.anchorbox .v .d{color:var(--ink3);font-weight:400;font-size:13px;margin-left:6px}
+
+.verdict{padding:12px 14px;border-bottom:1px solid var(--line2)}
+.verdict .badge{display:inline-block;font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;margin-right:7px}
+.verdict .badge.wait{background:#fdecea;color:#a5322a}
+.verdict .badge.go{background:#e8f5e9;color:#2e7d32}
+.verdict .badge.mid{background:#fff5e0;color:#96690f}
+.verdict .why{font-size:13.5px;color:var(--ink2);margin-top:6px}
+.verdict .why b{color:var(--ink)}
+.verdict .act{font-size:13px;color:var(--ink2);margin-top:5px}
+.verdict .act b{color:var(--accent);font-variant-numeric:tabular-nums}
+
+.list{max-height:290px;overflow-y:auto}
+.item{padding:7px 14px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.item:hover{background:#f7f9fc}
+.item.on{background:#eaf1fd}
+.item .sw{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
+.item .nm{flex:1 1 auto;min-width:0;font-size:13px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .rr{width:74px;height:7px;background:var(--line2);border-radius:4px;overflow:hidden;flex:0 0 auto}
+.item .rr i{display:block;height:100%;background:var(--accent2)}
+.item .mt{font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:96px;text-align:right}
+.item .mt b{color:var(--ink);font-weight:600}
+.item .mt .neg{color:#2e7d32;font-weight:700}
+.empty{padding:26px 16px;text-align:center;color:var(--ink3);font-size:13px}
+
+section.compare{margin-top:14px}
+.cmpwrap{padding:8px 14px 14px}
+.bars{display:flex;flex-direction:column;gap:5px}
+.bar{display:grid;grid-template-columns:112px minmax(0,1fr) 62px;align-items:center;gap:9px;font-size:12px}
+.bar .nm{color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .tr{background:var(--line2);border-radius:4px;height:15px;position:relative;overflow:hidden}
+.bar .fl{position:absolute;left:0;top:0;bottom:0;background:var(--accent2);border-radius:4px}
+.bar .vv{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+.bar.me .nm{color:var(--accent);font-weight:700}
+.bar.me .fl{background:var(--accent)}
+.bar .sb{font-size:11px;color:var(--ink3);text-align:right}
+
+.duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line2)}
+.duo .one{background:#fff;padding:12px 14px}
+.duo .one .t{font-size:12px;color:var(--ink3)}
+.duo .one .big{font-size:22px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:2px}
+.duo .one .big small{font-size:12px;color:var(--ink2);font-weight:600;margin-left:3px}
+.duo .one .d{font-size:12.5px;color:var(--ink2);margin-top:5px}
+.duo .one.a .big{color:var(--accent)}
+.duo .one.b .big{color:var(--accent2)}
+@media (max-width:640px){ .duo{grid-template-columns:minmax(0,1fr)} }
+
+.readout{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+.readout h3{margin:0 0 8px;font-size:14px}
+.readout p{margin:0 0 8px;color:var(--ink2);font-size:13.5px}
+.readout p b{color:var(--ink)}
+.readout .cnt{color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}
+.readout ul{margin:6px 0 0;padding-left:18px;color:var(--ink2);font-size:13px}
+.readout li{margin:3px 0}
+
+footer{margin-top:18px;padding-top:12px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink3);line-height:1.7}
+footer b{color:var(--ink2)}
+#err{display:none;margin:10px 0;padding:10px 12px;background:#fdecea;border:1px solid #f5c6c2;color:#8c2f22;border-radius:8px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hd">
+  <div class="kicker">图个好玩 · 地图大乱斗</div>
+  <h1>岔路<span class="en">THE FORK</span></h1>
+  <p class="sub">堵在路上，「换条路」是本能反应。我们把这件事算了一遍：同一段行程，用 <b>8 种偏离方式</b>
+     去绕，量一量那条「新路」里<b>有多少还是原来那条</b>。结果里有一种最尴尬的情况——
+     几何上换了 100%，时间上一点没换。</p>
+</header>
+
+<div id="err"></div>
+
+<div class="controls">
+  <div class="row">
+    <span class="lab">城市</span>
+    <div class="chips" id="cityChips"></div>
+  </div>
+  <div class="row">
+    <span class="lab">哪段行程</span>
+    <div class="chips" id="odChips"></div>
+  </div>
+  <div class="row">
+    <span class="lab">图层</span>
+    <label class="tog"><input type="checkbox" id="tgCand" checked>八条绕法</label>
+    <label class="tog"><input type="checkbox" id="tgMono" checked>绕不开的路段</label>
+    <label class="tog"><input type="checkbox" id="tgFork" checked>岔口</label>
+    <span class="hint">点右侧列表可单独高亮一条绕法</span>
+  </div>
+</div>
+
+<main class="grid">
+
+  <section class="card">
+    <div class="ch"><span>这条路有几条命</span><span class="r" id="mapMeta"></span></div>
+    <div id="map"></div>
+    <div class="mapnote" id="mapNote">深灰是导航默认给你的那条；红色是八种绕法里半数以上都得走的路段（绕不开）；浅蓝是八条绕法；橙色方块是能真正岔开的位置。</div>
+    <div class="ribwrap">
+      <div class="t">把这条路拉直：<b id="ribT">–</b></div>
+      <svg id="ribbon" viewBox="0 0 640 64" preserveAspectRatio="none"></svg>
+    </div>
+  </section>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <section class="card">
+      <div class="ch"><span>岔路体检</span><span class="r" id="kpiMeta"></span></div>
+      <div class="kpis">
+        <div class="kpi hl"><div class="n" id="kMono">–</div><div class="k">% 的路段绕不开（半垄断度）</div></div>
+        <div class="kpi"><div class="n" id="kKm">–</div><div class="k">公里是必经的</div></div>
+        <div class="kpi"><div class="n" id="kFork">–</div><div class="k">个岔口能真正岔开</div></div>
+        <div class="kpi hl2"><div class="n" id="kBest">–</div><div class="k">分钟买到最划算的一次换路</div></div>
+      </div>
+      <div class="anchorbox">
+        <div class="t">当前行程（导航默认给的路线）</div>
+        <div class="v" id="odV">–</div>
+      </div>
+      <div class="verdict">
+        <span class="badge" id="vBadge">–</span><span id="vWhy">–</span>
+        <div class="act" id="vAct">–</div>
+      </div>
+      <div class="list" id="list"></div>
+    </section>
+  </div>
+</main>
+
+<section class="card compare">
+  <div class="ch"><span>八城对比 · 半垄断度（越高越像独木桥）</span><span class="r">红条 = 当前城市</span></div>
+  <div class="cmpwrap"><div class="bars" id="bars"></div></div>
+</section>
+
+<section class="card compare">
+  <div class="ch"><span id="duoCh">同一对端点，方向一换</span><span class="r">自变量几乎相同，因变量差最大</span></div>
+  <div class="duo" id="duo"></div>
+</section>
+
+<div class="readout">
+  <h3>它在替你做哪个决定</h3>
+  <p>你堵在这条路上，第一反应是「换条路」。这个页面回答的是：<b>换路到底换得掉什么</b>——
+     是换到了另一条街，还是只是从主路挪到了辅路。</p>
+  <p id="roMain">–</p>
+  <ul id="roList"></ul>
+</div>
+
+<footer>
+  <b>数据说明</b>：8 座城市 × 4 类行程（进城 / 出城 / 横向 / 短途）×（1 条基准 + 8 条绕法）= <span id="fCount">–</span> 条真实驾车路线，
+  全部来自腾讯地图 WebService 驾车路线规划，采集于 <span id="fDate">–</span>，典型路况下的一次测算，非实时路况。<br>
+  <b>怎么造出「另一条路」</b>：腾讯驾车规划只返回一条最优路线，要拿到可比的第二选择，只能用<b>途经点</b>把路线逼开——
+  在起点到终点连线的 30% / 50% / 70% 处，向两侧各偏 900 米 / 2500 米 / 4500 米。<b>所以这里的「换路代价」是路网结构的上限，不是导航的策略。</b><br>
+  <b>口径</b>：两条路相距 ≤50 米算「同一条路」（实测把容差从 25 米放到 100 米，城市排序与对照倍数都不变）；
+  半垄断度 = 被半数以上绕法（≥5/9 条）仍然走过的路段占比；岔口 = 连续 120 米脱离基准才算真岔开，相距 600 米以内合并成一个；
+  「有效换路」= 10 分钟以内且至少换掉 30% 的路。<br>
+  <b>诚实的意外</b>：有 3 段行程出现过「加了途经点反而更快」（最多快 3 分钟）——默认给的那条未必是最快的，这条我们不写成结论，只如实记录。
+</footer>
+
+</div>
+
+<script src="https://map.qq.com/api/gljs?v=1.exp&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<script src="data.js"></script>
+<script src="model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

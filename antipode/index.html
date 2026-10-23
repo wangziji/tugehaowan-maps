@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>穿地镜 · ANTIPODE —— 从你脚下挖穿地球，看你会从哪里冒出来</title>
+<meta name="description" content="点地图任意一点，算出与它完全对穿的地球另一端：你会掉进哪片土地或哪片海，那边此刻几点、什么季节、太阳在地平线上还是线下。">
+<script src="land_min.js"></script>
+<script src="https://map.qq.com/api/gljs?v=1&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<style>
+  :root{
+    --bg:#070b14; --bg2:#0d1526; --panel:#111c30; --line:#1e2d47;
+    --txt:#e8eef8; --dim:#8fa3c0; --dim2:#61758f;
+    --cyan:#3ad6f5; --mag:#ff5fb0; --gold:#ffc861; --ok:#4ade80;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  a{color:var(--cyan);text-decoration:none}
+  .wrap{max-width:1180px;margin:0 auto;padding:22px 18px 60px}
+
+  header.top{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;justify-content:space-between;margin-bottom:16px}
+  .brand{font-size:26px;font-weight:800;letter-spacing:.5px;line-height:1.15}
+  .brand small{display:block;font-size:12px;font-weight:600;color:var(--cyan);letter-spacing:3px;margin-top:4px}
+  .oneline{font-size:13px;color:var(--dim);max-width:520px;line-height:1.6}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px}
+  .hero{position:relative;padding:10px;margin-bottom:14px;overflow:hidden}
+  #world{display:block;width:100%;height:auto;border-radius:8px}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;padding:8px 6px 4px;font-size:11.5px;color:var(--dim)}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+
+  .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:14px}
+  @media (max-width:880px){.grid{grid-template-columns:1fr}}
+
+  .sec{padding:14px}
+  .sec h3{margin:0 0 10px;font-size:13px;font-weight:700;color:var(--dim);letter-spacing:1px}
+  #tmap{width:100%;height:430px;border-radius:10px;background:#0a1220}
+  .mapfail{display:none;padding:20px;font-size:13px;color:var(--dim);line-height:1.7}
+  .ctrl{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
+  input[type=text]{flex:1;min-width:150px;background:#0a1220;border:1px solid var(--line);border-radius:8px;
+    color:var(--txt);padding:8px 10px;font-size:13px;outline:none}
+  input[type=text]:focus{border-color:var(--cyan)}
+  button{background:#16263f;border:1px solid var(--line);color:var(--txt);border-radius:8px;
+    padding:7px 11px;font-size:12.5px;cursor:pointer;transition:.15s}
+  button:hover{border-color:var(--cyan);color:var(--cyan)}
+  button.on{border-color:var(--cyan);color:var(--cyan);background:#0e2436}
+  .presets{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+  .hint{font-size:11.5px;color:var(--dim2);margin-top:9px;line-height:1.6}
+
+  .xsec{display:flex;gap:14px;align-items:center}
+  #xs{width:190px;height:190px;flex:none}
+  .xsinfo{font-size:12px;color:var(--dim);line-height:1.85}
+  .xsinfo b{color:var(--txt);font-weight:700}
+
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:13px}
+  .kv dt{color:var(--dim2);white-space:nowrap}
+  .kv dd{margin:0;font-variant-numeric:tabular-nums;word-break:break-word}
+  .big{font-size:19px;font-weight:800;line-height:1.4;margin:2px 0 8px}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--dim)}
+  .tag.sea{border-color:#2b5fa8;color:#7fb6ff;background:#0d1c33}
+  .tag.land{border-color:#3d7a4a;color:#7fe0a0;background:#0d2118}
+  .tag.rare{border-color:#a06bd0;color:#ddb6ff;background:#1a1030}
+
+  .facts{margin-top:12px;border-top:1px solid var(--line);padding-top:11px;font-size:12.5px;color:var(--dim);line-height:1.85}
+  .facts li{margin-left:-8px}
+  .warnbox{margin-top:10px;padding:9px 11px;border:1px dashed #3a4a66;border-radius:9px;
+    font-size:11.5px;color:var(--dim2);line-height:1.7}
+  footer{margin-top:22px;font-size:11.5px;color:var(--dim2);line-height:1.9;border-top:1px solid var(--line);padding-top:14px}
+  .pill{display:inline-block;padding:1px 7px;border:1px solid var(--line);border-radius:20px;margin:0 4px 4px 0;font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <div class="brand">穿地镜 · ANTIPODE<small>挖 穿 地 球 的 那 一 头</small></div>
+    </div>
+    <div class="oneline">
+      给「站在原地想知道地球正对面是谁」的人 —— 点地图任意一点，算出与它<b style="color:var(--cyan)">完全对穿</b>的那个点，
+      告诉你会掉进哪片土地或哪片海，以及此刻那边几点、太阳在多高。
+    </div>
+  </header>
+
+  <div class="card hero">
+    <canvas id="world" width="1600" height="800"></canvas>
+    <div class="legend">
+      <span><i style="background:#3ad6f5"></i>你站的地方</span>
+      <span><i style="background:#ff5fb0"></i>地球正对面（对跖点）</span>
+      <span><i style="background:#2f5c8f"></i>本侧陆地</span>
+      <span><i style="background:#a855f7"></i>对侧陆地投到这一面</span>
+      <span style="color:var(--dim2)">虚线＝沿经线过极点的大圆路径（或直接挖穿地心，见右侧剖面）</span>
+      <span style="color:var(--dim2)">等距圆柱投影 · 陆地轮廓来自 Natural Earth 110m（公有领域）</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- 左：腾讯地图 -->
+    <div class="card sec">
+      <h3>① 在这里选一个点</h3>
+      <div id="tmap"></div>
+      <div class="mapfail" id="mapfail">
+        地图组件未能加载（可能是网络或 Key 额度限制）。<br>
+        你仍然可以直接在下面输入经纬度，例如 <code>22.5406, 113.9340</code>。
+      </div>
+      <div class="ctrl">
+        <input type="text" id="q" placeholder="搜一个地点，如「腾讯滨海大厦」">
+        <button id="btnSearch">搜索</button>
+        <button id="btnMine">定位我</button>
+      </div>
+      <div class="presets" id="presets"></div>
+      <div class="hint">也可以直接在地图上<b>点一下</b>。默认点：腾讯滨海大厦（深圳南山）。</div>
+
+      <h3 style="margin-top:16px">怎么玩</h3>
+      <div class="facts" style="border-top:none;padding-top:0">
+        <ul style="margin:0;padding-left:18px">
+          <li>在左边地图上随手点一下 —— 点你公司、点你家、点一个你从来没去过的地方。</li>
+          <li>右边会立刻算出地球正对面的那个点：是陆地还是海，当地几点，太阳在多高。</li>
+          <li>点「<b style="color:var(--txt)">翻到对面，再对穿一次</b>」，从地球另一头看回来 —— 你会回到原点。</li>
+          <li>点「<b style="color:var(--txt)">复制分享链接</b>」，把这个坐标发给同事，让他看看他的脚下正对着哪儿。</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 右：剖面 + 结果 -->
+    <div class="card sec">
+      <h3>② 地球剖面 · 你会怎么掉下去</h3>
+      <div class="xsec">
+        <svg id="xs" viewBox="0 0 200 200"></svg>
+        <div class="xsinfo">
+          隧道全长 <b>12,742 km</b><br>
+          无摩擦自由落体<br>
+          单程 <b id="falltime">42:12</b><br>
+          <span style="color:var(--dim2)">（引力火车半周期）</span>
+          <div style="margin-top:8px">
+            <span class="pill">地壳 0–35km</span>
+            <span class="pill">地幔 35–2,890km</span>
+            <span class="pill">外核 2,890–5,150km</span>
+            <span class="pill">内核 5,150–6,371km</span>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:16px">③ 对跖点</h3>
+      <div class="big" id="antiName">—</div>
+      <dl class="kv">
+        <dt>坐标</dt><dd id="antiLatLng">—</dd>
+        <dt>落点</dt><dd id="antiType">—</dd>
+        <dt>当地时间</dt><dd id="antiTime">—</dd>
+        <dt>时差</dt><dd id="tzDiff">—</dd>
+        <dt>太阳高度</dt><dd id="antiAlt">—</dd>
+        <dt>季节</dt><dd id="antiSeason">—</dd>
+        <dt>本点</dt><dd id="orgName">—</dd>
+      </dl>
+
+      <div class="facts">
+        <ul style="margin:0;padding-left:18px">
+          <li>对跖点的对跖点，还是你 —— <b style="color:var(--txt)">永远回得来</b>。</li>
+          <li>两地太阳高度角<b style="color:var(--txt)">必然相反</b>：你这边 +32°，那边就是 −32°。你白天，那边一定是夜。</li>
+          <li>地球 71% 是海 —— 从中国挖下去，<b style="color:var(--txt)">约七成概率落水</b>。</li>
+          <li id="factLL"></li>
+        </ul>
+        <button id="btnFlip" style="margin-top:10px">↺ 翻到对面，再对穿一次</button>
+        <button id="btnShare">🔗 复制分享链接</button>
+      </div>
+      <div class="warnbox">
+        本页所有数值为几何／天文推算值，用于科普与娱乐；陆地轮廓取自 Natural Earth 110m（公有领域，示意精度）。
+        地址文字来自腾讯位置服务逆地理编码，若接口不可用则回退为坐标与海域推断。非导航用途，请勿据此出行。
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <b style="color:var(--dim)">一句话说明：</b>给「站在原地想知道地球正对面是谁」的人 —— 点地图任意一点，
+    算出与它完全对穿的那个点，告诉你会掉进哪片土地或哪片海，以及此刻那边几点、太阳在多高。<br>
+    地图底图与地点搜索：腾讯地图 JSAPI GL + WebService API ｜ 陆地判定、时区、太阳高度角、落体时间：本地几何／天文推算 ｜ 演示作品，数据仅用于示意。
+  </footer>
+</div>
+
+<script>
+/* ============ 基础常量 ============ */
+var KEY = "CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N";
+var R_EARTH = 6371.0;          // km
+var RAD = Math.PI / 180;
+var org = {lat: 22.540601, lng: 113.933970};   // 腾讯滨海大厦
+var anti = null;
+
+function normLng(l){ l = ((l + 180) % 360 + 360) % 360 - 180; return l; }
+function antipodeOf(lat, lng){ return {lat: -lat, lng: normLng(lng + 180)}; }
+function fmtLat(v){ return Math.abs(v).toFixed(4) + "° " + (v >= 0 ? "N" : "S"); }
+function fmtLng(v){ return Math.abs(v).toFixed(4) + "° " + (v >= 0 ? "E" : "W"); }
+
+/* ============ 海陆判定（本地，不依赖 API） ============ */
+function inRing(lng, lat, ring){
+  var inside = false;
+  for (var i = 0, j = ring.length - 1; i < ring.length; j = i++){
+    var xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    if (((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+function isLand(lng, lat){
+  var R = window.LAND_RINGS || [];
+  for (var i = 0; i < R.length; i++) if (inRing(lng, lat, R[i])) return true;
+  return false;
+}
+function seaName(lng, lat){
+  if (lat > 66) return "北冰洋";
+  if (lat < -58) return "南大洋";
+  if (lng >= 120 || lng <= -70) return "太平洋";
+  if (lng > -70 && lng < 25) return "大西洋";
+  return "印度洋";
+}
+/* 大洲粗略包围盒 [名称, minLng, minLat, maxLng, maxLat]，仅用于文字兜底 */
+var CONTS = [
+  ["南极洲", -180, -90, 180, -60],
+  ["南美洲", -82, -56, -34, 13],
+  ["北美洲", -170, 15, -50, 72],
+  ["欧洲", -25, 36, 45, 72],
+  ["非洲", -18, -35, 52, 37],
+  ["大洋洲", 112, -48, 180, -8],
+  ["亚洲", 26, -10, 180, 78]
+];
+function contName(lng, lat){
+  for (var i = 0; i < CONTS.length; i++){
+    var c = CONTS[i];
+    if (lng >= c[1] && lng <= c[3] && lat >= c[2] && lat <= c[4]) return c[0];
+  }
+  return "某块陆地";
+}
+
+/* ============ 太阳高度角（Spencer/Cooper 简化式，UTC 输入） ============ */
+function sunAlt(lat, lng, d){
+  var start = Date.UTC(d.getUTCFullYear(), 0, 0);
+  var N = (Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - start) / 86400000;
+  var hourUTC = d.getUTCHours() + d.getUTCMinutes() / 60 + d.getUTCSeconds() / 3600;
+  var frac = (2 * Math.PI / 365) * (N - 1 + (hourUTC - 12) / 24);
+  var decl = 0.006918 - 0.399912 * Math.cos(frac) + 0.070257 * Math.sin(frac)
+           - 0.006758 * Math.cos(2 * frac) + 0.000907 * Math.sin(2 * frac)
+           - 0.002697 * Math.cos(3 * frac) + 0.001480 * Math.sin(3 * frac);
+  var eqt = 229.18 * (0.000075 + 0.001868 * Math.cos(frac) - 0.032077 * Math.sin(frac)
+           - 0.014615 * Math.cos(2 * frac) - 0.040849 * Math.sin(2 * frac));
+  var tst = hourUTC * 60 + eqt + lng * 4;         // 真太阳时（分钟）
+  var ha = tst / 4 - 180;                          // 时角（度）
+  var alt = Math.asin(Math.sin(lat * RAD) * Math.sin(decl)
+          + Math.cos(lat * RAD) * Math.cos(decl) * Math.cos(ha * RAD)) / RAD;
+  return {alt: alt, decl: decl / RAD};
+}
+function tzOffset(lng){ return Math.round(lng / 15); }
+function localHM(lng, d){
+  var off = tzOffset(lng);
+  var t = new Date(d.getTime() + (d.getTimezoneOffset() + off * 60) * 60000);
+  var hh = t.getHours(), mm = t.getMinutes();
+  return (hh < 10 ? "0" : "") + hh + ":" + (mm < 10 ? "0" : "") + mm;
+}
+function seasonWord(lat, declDeg){
+  var summer = (lat >= 0 ? 1 : -1) === (declDeg >= 0 ? 1 : -1);
+  var near = Math.abs(declDeg) < 6;
+  if (near) return "冬夏交替（接近二分）";
+  return summer ? "夏半年" : "冬半年";
+}
+
+/* ============ 世界地图 canvas ============ */
+var cv = document.getElementById("world"), cx = cv.getContext("2d");
+var W = cv.width, H = cv.height;
+function px(lng){ return (lng + 180) / 360 * W; }
+function py(lat){ return (90 - lat) / 180 * H; }
+/* 按反子午线切段，避免出现横跨全图的“拉丝” */
+function chains(ring, shift){
+  var out = [], cur = [];
+  for (var i = 0; i < ring.length; i++){
+    var lng = normLng(ring[i][0] + (shift ? 180 : 0));
+    var lat = ring[i][1] * (shift ? -1 : 1);
+    if (cur.length && Math.abs(lng - cur[cur.length - 1][0]) > 180){ out.push(cur); cur = []; }
+    cur.push([lng, lat]);
+  }
+  if (cur.length) out.push(cur);
+  return out;
+}
+function pathRing(ring, shift){
+  var cs = chains(ring, shift);
+  for (var k = 0; k < cs.length; k++){
+    var c = cs[k];
+    if (c.length < 3) continue;
+    cx.beginPath();
+    for (var i = 0; i < c.length; i++){
+      var X = px(c[i][0]), Y = py(c[i][1]);
+      if (i === 0) cx.moveTo(X, Y); else cx.lineTo(X, Y);
+    }
+    cx.closePath(); cx.fill(); cx.stroke();
+  }
+}
+var t0 = performance.now();
+function drawWorld(){
+  var R = window.LAND_RINGS || [];
+  var now = (performance.now() - t0) / 1000;
+  cx.clearRect(0, 0, W, H);
+  var g = cx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#0a1226"); g.addColorStop(.5, "#0a1526"); g.addColorStop(1, "#080f1d");
+  cx.fillStyle = g; cx.fillRect(0, 0, W, H);
+
+  // 经纬网
+  cx.strokeStyle = "rgba(120,160,220,.09)"; cx.lineWidth = 1;
+  for (var lo = -180; lo <= 180; lo += 30){ cx.beginPath(); cx.moveTo(px(lo), 0); cx.lineTo(px(lo), H); cx.stroke(); }
+  for (var la = -60; la <= 60; la += 30){ cx.beginPath(); cx.moveTo(0, py(la)); cx.lineTo(W, py(la)); cx.stroke(); }
+  cx.strokeStyle = "rgba(160,200,255,.22)"; cx.beginPath(); cx.moveTo(0, py(0)); cx.lineTo(W, py(0)); cx.stroke();
+
+  // 对侧陆地（旋转 180° 投到本面）
+  cx.strokeStyle = "rgba(168,85,247,.42)"; cx.lineWidth = 1.4; cx.fillStyle = "rgba(168,85,247,.10)";
+  for (var i = 0; i < R.length; i++) pathRing(R[i], true);
+
+  // 本侧陆地
+  cx.strokeStyle = "rgba(90,150,220,.75)"; cx.lineWidth = 1.4; cx.fillStyle = "#16243a";
+  for (var i2 = 0; i2 < R.length; i2++) pathRing(R[i2], false);
+
+  if (!anti){ requestAnimationFrame(drawWorld); return; }
+  var x1 = px(org.lng), y1 = py(org.lat), x2 = px(anti.lng), y2 = py(anti.lat);
+
+  // 连接：经线大圆（本点 -> 极点 -> 对跖点）
+  cx.setLineDash([7, 7]); cx.lineWidth = 1.5; cx.strokeStyle = "rgba(255,95,176,.45)";
+  cx.beginPath();
+  if (org.lat >= 0){ cx.moveTo(x1, y1); cx.lineTo(x1, 0); cx.moveTo(x2, H); cx.lineTo(x2, y2); }
+  else { cx.moveTo(x1, y1); cx.lineTo(x1, H); cx.moveTo(x2, 0); cx.lineTo(x2, y2); }
+  cx.stroke(); cx.setLineDash([]);
+
+  // 脉冲光环
+  [[x1, y1, "#3ad6f5"], [x2, y2, "#ff5fb0"]].forEach(function(p){
+    var ph = (now % 1.6) / 1.6, r = 8 + ph * 34, a = (1 - ph) * .75;
+    cx.beginPath(); cx.arc(p[0], p[1], r, 0, Math.PI * 2);
+    cx.strokeStyle = p[2]; cx.globalAlpha = a; cx.lineWidth = 2.5; cx.stroke(); cx.globalAlpha = 1;
+  });
+
+  // 点
+  [[x1, y1, "#3ad6f5", "你"], [x2, y2, "#ff5fb0", "对面"]].forEach(function(p){
+    cx.beginPath(); cx.arc(p[0], p[1], 7, 0, Math.PI * 2);
+    cx.fillStyle = p[2]; cx.fill();
+    cx.strokeStyle = "#fff"; cx.lineWidth = 2.5; cx.stroke();
+    cx.font = "bold 26px -apple-system,sans-serif"; cx.fillStyle = p[2];
+    cx.textAlign = "center";
+    cx.fillText(p[3], p[0], p[1] - 14);
+  });
+  requestAnimationFrame(drawWorld);
+}
+
+/* ============ 地球剖面 SVG ============ */
+function crossSection(){
+  var s = document.getElementById("xs");
+  s.innerHTML =
+   '<defs>' +
+     '<radialGradient id="core" cx="50%" cy="50%">' +
+       '<stop offset="0%" stop-color="#fff3c4"/><stop offset="60%" stop-color="#ffb648"/><stop offset="100%" stop-color="#ff7a18"/></radialGradient>' +
+     '<linearGradient id="mantle" x1="0" y1="0" x2="0" y2="1">' +
+       '<stop offset="0%" stop-color="#7a2f2a"/><stop offset="100%" stop-color="#c9542f"/></linearGradient>' +
+   '</defs>' +
+   '<circle cx="100" cy="100" r="88" fill="url(#mantle)"/>' +
+   '<circle cx="100" cy="100" r="52" fill="url(#core)" opacity=".95"/>' +
+   '<circle cx="100" cy="100" r="88" fill="none" stroke="#0b1220" stroke-width="3"/>' +
+   '<circle cx="100" cy="100" r="58" fill="none" stroke="#ffe9a8" stroke-width="1" opacity=".5"/>' +
+   '<line x1="100" y1="12" x2="100" y2="188" stroke="#ffffff" stroke-width="2" stroke-dasharray="5 6" opacity=".55"/>' +
+   '<circle cx="100" cy="12" r="7" fill="#3ad6f5" stroke="#fff" stroke-width="2.5"/>' +
+   '<circle cx="100" cy="188" r="7" fill="#ff5fb0" stroke="#fff" stroke-width="2.5"/>' +
+   '<circle r="4.5" fill="#fff">' +
+     '<animateMotion dur="6.4s" repeatCount="indefinite" path="M100,12 L100,188"/>' +
+   '</circle>' +
+   '<text x="100" y="9" text-anchor="middle" font-size="9" fill="#3ad6f5">地表</text>' +
+   '<text x="100" y="199" text-anchor="middle" font-size="9" fill="#ff5fb0">出口</text>';
+}
+
+/* ============ 逆地理编码（JSONP，失败降级） ============ */
+var cbid = 0;
+function jsonp(url, timeout){
+  return new Promise(function(res, rej){
+    var name = "__cb" + (++cbid);
+    var s = document.createElement("script");
+    var timer = setTimeout(function(){ cleanup(); rej(new Error("timeout")); }, timeout || 6000);
+    function cleanup(){ clearTimeout(timer); delete window[name]; if (s.parentNode) s.parentNode.removeChild(s); }
+    window[name] = function(d){ cleanup(); res(d); };
+    s.src = url + (url.indexOf("?") < 0 ? "?" : "&") + "output=jsonp&callback=" + name;
+    s.onerror = function(){ cleanup(); rej(new Error("net")); };
+    document.body.appendChild(s);
+  });
+}
+function regeo(lat, lng){
+  return jsonp("https://apis.map.qq.com/ws/geocoder/v1/?location=" + lat + "," + lng + "&get_poi=0&key=" + KEY)
+    .then(function(d){ return (d && d.status === 0 && d.result) ? (d.result.address || "") : ""; })
+    .catch(function(){ return ""; });
+}
+
+/* ============ 主流程 ============ */
+function setOrigin(lat, lng, fromUser){
+  org = {lat: lat, lng: lng};
+  anti = antipodeOf(lat, lng);
+  if (marker) marker.setGeometries([{id: "o", position: new TMap.LatLng(lat, lng)}]);
+  if (map) { try { map.panTo(new TMap.LatLng(lat, lng)); } catch(e){} }
+  render();
+  if (fromUser !== false) history.replaceState(null, "", "#" + lat.toFixed(5) + "," + lng.toFixed(5));
+}
+
+function render(){
+  var d = new Date();
+  var land = isLand(anti.lng, anti.lat);
+  var orgLand = isLand(org.lng, org.lat);
+  var sea = !land;
+  var guess = land ? contName(anti.lng, anti.lat) : seaName(anti.lng, anti.lat);
+
+  document.getElementById("antiLatLng").textContent = fmtLat(anti.lat) + " , " + fmtLng(anti.lng);
+  document.getElementById("antiType").innerHTML =
+    (land ? '<span class="tag land">陆地 · 掉在岸上</span> ' : '<span class="tag sea">海面 · 落水</span> ') +
+    (land ? "大致位于 " + guess : guess + " 海域");
+  document.getElementById("orgName").textContent = "[" + fmtLat(org.lat) + " " + fmtLng(org.lng) + "]";
+
+  var so = sunAlt(org.lat, org.lng, d), sa = sunAlt(anti.lat, anti.lng, d);
+  document.getElementById("antiTime").textContent =
+    localHM(anti.lng, d) + "（当地，UTC" + (tzOffset(anti.lng) >= 0 ? "+" : "") + tzOffset(anti.lng) + "）";
+  document.getElementById("tzDiff").textContent =
+    "与本地相差 " + Math.abs(tzOffset(anti.lng) - tzOffset(org.lng)) + " 小时（对跖点恒差 12 小时）";
+  document.getElementById("antiAlt").textContent =
+    sa.alt.toFixed(1) + "° （" + (sa.alt > 0 ? "太阳在地平线上 · 白天" : sa.alt > -6 ? "民用曙光／暮光" : "太阳在地平线下 · 夜") + "）　｜　本点 " + so.alt.toFixed(1) + "°";
+  document.getElementById("antiSeason").textContent =
+    seasonWord(anti.lat, sa.decl) + "　｜　本点 " + seasonWord(org.lat, so.decl);
+
+  document.getElementById("factLL").innerHTML = (land && orgLand)
+    ? '<b style="color:#ddb6ff">稀有的「陆地↔陆地」对穿</b>：全球陆地里只有约 4% 能对上另一块陆地，你刚好踩中了一个。'
+    : "本点" + (orgLand ? "陆地" : "海面") + " → 对面" + (land ? "陆地" : "海面") + "，这是最常见的组合。";
+
+  document.getElementById("antiName").textContent = land ? ("地球对面 · " + guess) : ("地球对面 · " + guess);
+
+  // 落体时间：T = π*sqrt(R/g)，g 取地表 9.80665 → 约 42.2 分
+  var T = Math.PI * Math.sqrt(R_EARTH * 1000 / 9.80665) / 60;
+  var mm = Math.floor(T), ss = Math.round((T - mm) * 60);
+  document.getElementById("falltime").textContent = mm + ":" + (ss < 10 ? "0" : "") + ss;
+
+  regeo(anti.lat, anti.lng).then(function(addr){
+    if (addr && !/^ocean$/i.test(addr.trim())) document.getElementById("antiName").textContent = addr;
+    else if (sea) document.getElementById("antiName").textContent = "地球对面 · " + guess + " 海域（无标称地名）";
+  });
+  regeo(org.lat, org.lng).then(function(addr){
+    if (addr) document.getElementById("orgName").textContent = addr + "　[" + fmtLat(org.lat) + " " + fmtLng(org.lng) + "]";
+  });
+}
+
+/* ============ 腾讯地图 ============ */
+var map = null, marker = null;
+function initMap(){
+  if (typeof TMap === "undefined"){ document.getElementById("mapfail").style.display = "block"; document.getElementById("tmap").style.display = "none"; return; }
+  try {
+    map = new TMap.Map(document.getElementById("tmap"), {
+      center: new TMap.LatLng(org.lat, org.lng), zoom: 11, pitch: 0, rotation: 0
+    });
+    var pin = function(c){
+      return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" viewBox="0 0 30 40">' +
+        '<path d="M15 0C6.7 0 0 6.7 0 15c0 10.5 15 25 15 25s15-14.5 15-25C30 6.7 23.3 0 15 0z" fill="' + c + '" stroke="#fff" stroke-width="2"/>' +
+        '<circle cx="15" cy="15" r="5" fill="#fff"/></svg>');
+    };
+    marker = new TMap.MultiMarker({
+      map: map,
+      styles: { s: new TMap.MarkerStyle({width: 30, height: 40, anchor: {x: 15, y: 40}, src: pin("#3ad6f5")}) },
+      geometries: [{id: "o", styleId: "s", position: new TMap.LatLng(org.lat, org.lng)}]
+    });
+    map.on("click", function(e){ setOrigin(e.latLng.getLat(), e.latLng.getLng()); });
+  } catch(e){
+    document.getElementById("mapfail").style.display = "block";
+  }
+}
+
+/* ============ UI ============ */
+var PRESETS = [
+  ["腾讯滨海大厦", 22.540601, 113.933970],
+  ["北京", 39.904200, 116.407400],
+  ["上海", 31.230400, 121.473700],
+  ["成都", 30.572800, 104.066800],
+  ["乌鲁木齐", 43.825600, 87.616800],
+  ["拉萨", 29.652000, 91.172100],
+  ["三亚", 18.252400, 109.511900],
+  ["漠河", 52.972600, 122.538800]
+];
+function buildPresets(){
+  var box = document.getElementById("presets");
+  PRESETS.forEach(function(p){
+    var b = document.createElement("button");
+    b.textContent = p[0];
+    b.onclick = function(){ setOrigin(p[1], p[2]); };
+    box.appendChild(b);
+  });
+}
+function doSearch(){
+  var kw = document.getElementById("q").value.trim();
+  if (!kw) return;
+  if (/^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(kw)){
+    var a = kw.split(",").map(parseFloat);
+    setOrigin(a[0], a[1]); return;
+  }
+  jsonp("https://apis.map.qq.com/ws/place/v1/suggestion/?keyword=" + encodeURIComponent(kw) + "&region=中国&key=" + KEY)
+    .then(function(d){
+      if (d && d.status === 0 && d.data && d.data.length){
+        var it = d.data[0];
+        setOrigin(it.location.lat, it.location.lng);
+      } else alert("没找到，换个词试试（也可以直接输入 纬度,经度）");
+    })
+    .catch(function(){ alert("搜索接口暂不可用，可直接输入「纬度,经度」，如 22.5406, 113.9340"); });
+}
+
+/* ============ 启动 ============ */
+buildPresets();
+crossSection();
+initMap();
+// 看门狗：底图 9 秒内没出现就切到手动输入兜底，保证核心功能永远可用
+setTimeout(function(){
+  if (!document.querySelector("#tmap canvas")){
+    document.getElementById("mapfail").style.display = "block";
+    document.getElementById("tmap").style.display = "none";
+  }
+}, 9000);
+
+// 先用默认点（或 URL 里的点）建立 anti，再启动动画循环 —— 顺序不能反
+var fromHash = null;
+if (location.hash){
+  var _m = location.hash.slice(1).split(",").map(parseFloat);
+  if (_m.length === 2 && isFinite(_m[0]) && isFinite(_m[1])) fromHash = _m;
+}
+setOrigin(fromHash ? fromHash[0] : org.lat, fromHash ? fromHash[1] : org.lng, false);
+drawWorld();
+
+window.addEventListener("hashchange", function(){
+  var m = location.hash.slice(1).split(",").map(parseFloat);
+  if (m.length === 2 && isFinite(m[0]) && isFinite(m[1])) setOrigin(m[0], m[1], true);
+});
+
+document.getElementById("btnSearch").onclick = doSearch;
+document.getElementById("q").addEventListener("keydown", function(e){ if (e.key === "Enter") doSearch(); });
+document.getElementById("btnMine").onclick = function(){
+  if (!navigator.geolocation){ alert("浏览器不支持定位"); return; }
+  navigator.geolocation.getCurrentPosition(function(p){ setOrigin(p.coords.latitude, p.coords.longitude); },
+    function(){ alert("定位失败或被拒绝，点地图选一个点吧"); });
+};
+document.getElementById("btnFlip").onclick = function(){ setOrigin(anti.lat, anti.lng); };
+document.getElementById("btnShare").onclick = function(){
+  var url = location.origin + location.pathname + "#" + org.lat.toFixed(5) + "," + org.lng.toFixed(5);
+  if (navigator.clipboard) navigator.clipboard.writeText(url).then(function(){ alert("已复制：\n" + url); });
+  else prompt("复制这个链接：", url);
+};
+</script>
+</body>
+</html>

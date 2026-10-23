@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>地球鼓包 · THE BULGE —— 你和远方之间，隔着地球自己隆起的一块</title>
+<meta name="description" content="在地图上点两个地方，算出它们之间地面比直线高出多少：北京到天津隔着 254 米，北京到上海隔着 22 公里——比珠峰高一倍半。">
+<script src="model.js"></script>
+<script src="https://map.qq.com/api/gljs?v=1&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<style>
+  :root{
+    --bg:#070b14; --bg2:#0d1526; --panel:#111c30; --line:#1e2d47;
+    --txt:#e8eef8; --dim:#8fa3c0; --dim2:#61758f;
+    --cyan:#3ad6f5; --mag:#ff5fb0; --gold:#ffc861; --ok:#4ade80; --warn:#ff8a5c;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  a{color:var(--cyan);text-decoration:none}
+  .wrap{max-width:1180px;margin:0 auto;padding:22px 18px 60px}
+
+  header.top{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;justify-content:space-between;margin-bottom:16px}
+  .brand{font-size:26px;font-weight:800;letter-spacing:.5px;line-height:1.15}
+  .brand small{display:block;font-size:12px;font-weight:600;color:var(--cyan);letter-spacing:3px;margin-top:4px}
+  .oneline{font-size:13px;color:var(--dim);max-width:540px;line-height:1.6}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px}
+  .grid{display:grid;grid-template-columns:1.02fr .98fr;gap:14px}
+  @media (max-width:880px){.grid{grid-template-columns:1fr}}
+  .sec{padding:14px;margin-bottom:14px}
+  .sec h3{margin:0 0 10px;font-size:13px;font-weight:700;color:var(--dim);letter-spacing:1px}
+  #tmap{width:100%;height:430px;border-radius:10px;background:#0a1220}
+  .mapfail{display:none;padding:20px;font-size:13px;color:var(--warn);line-height:1.7;
+    border:1px dashed #6b3b22;border-radius:10px}
+
+  .ctrl{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
+  input[type=text]{flex:1;min-width:150px;background:#0a1220;border:1px solid var(--line);border-radius:8px;
+    color:var(--txt);padding:8px 10px;font-size:13px;outline:none}
+  input[type=text]:focus{border-color:var(--cyan)}
+  button{background:#16263f;border:1px solid var(--line);color:var(--txt);border-radius:8px;
+    padding:7px 11px;font-size:12.5px;cursor:pointer;transition:.15s}
+  button:hover{border-color:var(--cyan);color:var(--cyan)}
+  button.on{border-color:var(--cyan);color:var(--cyan);background:#0e2436}
+  .presets{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+  .hint{font-size:11.5px;color:var(--dim2);margin-top:9px;line-height:1.6}
+
+  .big{font-size:30px;font-weight:800;line-height:1.15;margin:2px 0 4px;color:var(--gold);
+       font-variant-numeric:tabular-nums;word-break:break-all}
+  .bigsub{font-size:12.5px;color:var(--dim);margin-bottom:12px;line-height:1.6}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;font-size:13px}
+  .kv dt{color:var(--dim2);white-space:nowrap}
+  .kv dd{margin:0;font-variant-numeric:tabular-nums;word-break:break-word}
+  .kv dd b{color:var(--cyan);font-weight:700}
+
+  .xs{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  #xsSvg{width:260px;height:200px;flex:none}
+  .xsinfo{font-size:12px;color:var(--dim);line-height:1.9;min-width:180px}
+  .xsinfo b{color:var(--txt);font-weight:700}
+
+  table.cmp{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.cmp th,table.cmp td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;
+    font-variant-numeric:tabular-nums;white-space:nowrap}
+  table.cmp th{color:var(--dim2);font-weight:600;text-align:right;font-size:11.5px}
+  table.cmp td:first-child,table.cmp th:first-child{text-align:left;white-space:normal}
+  table.cmp tr.hi td{background:#0e2436;color:var(--gold)}
+  table.cmp tr:hover td{background:#152238}
+
+  .sliderrow{display:flex;align-items:center;gap:12px;margin-top:4px}
+  input[type=range]{flex:1;accent-color:#3ad6f5}
+  .sliderrow .val{min-width:104px;text-align:right;font-variant-numeric:tabular-nums;font-size:13px}
+
+  .facts{margin-top:12px;border-top:1px solid var(--line);padding-top:11px;font-size:12.5px;color:var(--dim);line-height:1.85}
+  .facts li{margin-left:-8px;margin-bottom:3px}
+  .facts b{color:var(--txt)}
+  .pill{display:inline-block;padding:1px 7px;border:1px solid var(--line);border-radius:20px;margin:0 4px 4px 0;font-size:11px}
+  .warnbox{margin-top:10px;padding:9px 11px;border:1px dashed #3a4a66;border-radius:9px;
+    font-size:11.5px;color:var(--dim2);line-height:1.7}
+  .err{display:none;margin-top:9px;padding:8px 10px;border:1px solid #6b3b22;background:#21130c;
+    border-radius:8px;font-size:12px;color:var(--warn);line-height:1.6}
+  footer{margin-top:22px;font-size:11.5px;color:var(--dim2);line-height:1.9;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <div class="brand">地球鼓包 · THE BULGE<small>你 和 远 方 之 间 隔 着 什 么</small></div>
+    </div>
+    <div class="oneline">地球不是平的，所以两点之间的地面永远比直线高出一截。
+      这一截有多高？在地图上点两个地方，它就给你算出来。</div>
+  </header>
+
+  <div class="card sec">
+    <h3>① 在地图上选两个地方</h3>
+    <div id="tmap"></div>
+    <div class="mapfail" id="mapfail">地图底图加载失败。<b>本页的数字与示意图不依赖地图，仍可正常使用</b>；
+      上面的地点选择请改用「输入地点」框或下方预设按钮。</div>
+    <div class="err" id="err"></div>
+    <div class="ctrl">
+      <input type="text" id="q" placeholder="输入地点，回车后轮流设为 A / B，例如：深圳湾体育中心">
+      <button id="btnSearch">定位</button>
+      <button id="btnSwap">交换 A / B</button>
+      <button id="btnRefr">计入大气折射</button>
+    </div>
+    <div class="presets" id="presets"></div>
+    <div class="hint" id="pickhint">当前正在设置：<b style="color:var(--cyan)">A 点</b>。直接点地图任意位置即可；再次点击会设为 B 点，之后轮流切换。</div>
+  </div>
+
+  <div class="grid">
+    <div class="card sec">
+      <h3>② 它们之间，地面隆起了多少</h3>
+      <div class="big" id="bigSag">—</div>
+      <div class="bigsub" id="bigSagSub">—</div>
+      <dl class="kv" id="kvMain"></dl>
+      <div class="warnbox" id="scaleNote"></div>
+    </div>
+
+    <div class="card sec">
+      <h3>③ 剖面示意</h3>
+      <div class="xs">
+        <svg id="xsSvg" viewBox="0 0 260 200" role="img" aria-label="两点之间地面隆起的剖面示意图"></svg>
+        <div class="xsinfo" id="xsInfo"></div>
+      </div>
+      <div class="hint" id="xsNote"></div>
+    </div>
+  </div>
+
+  <div class="card sec">
+    <h3>④ 站在高处，你能看多远</h3>
+    <div class="sliderrow">
+      <input type="range" id="hRange" min="0" max="1000" value="500">
+      <span class="val" id="hVal">—</span>
+    </div>
+    <div class="presets">
+      <button data-h="0.0017">站着（眼高 1.7 m）</button>
+      <button data-h="0.05">15 层楼（50 m）</button>
+      <button data-h="0.3">100 层楼（300 m）</button>
+      <button data-h="0.632">上海中心（632 m）</button>
+      <button data-h="8.84886">珠峰（8848 m）</button>
+      <button data-h="10.6">民航客机（10.6 km）</button>
+      <button data-h="420">空间站（420 km）</button>
+    </div>
+    <dl class="kv" id="kvView" style="margin-top:12px"></dl>
+    <div class="hint">地图上的青色圆圈就是从这个高度看出去的地平线范围（圆心为 A 点）。</div>
+  </div>
+
+  <div class="card sec">
+    <h3>⑤ 一些现成的对照</h3>
+    <table class="cmp" id="cmpTable"></table>
+    <div class="hint">表中距离为两地中心点的地表大圆距离，与公路/铁路里程无关。</div>
+  </div>
+
+  <div class="card sec">
+    <h3>⑥ 三个能「哇」出来的反常识</h3>
+    <ul class="facts" id="wow"></ul>
+    <div class="warnbox">
+      <b>演示与免责声明</b><br>
+      ① 本页把地球当作半径 6371 km 的正球体，实际地球是扁率约 1/298 的椭球，且地表有真实的山脉与盆地；
+      因此所有结果都是<b>几何量级</b>，不是工程测量值。<br>
+      ② 「需要爬多高才能看见」只计入地球曲率的遮挡，<b>不计入</b>地形遮挡、建筑遮挡、雾霾与空气透明度。
+      现实中这些往往是更强的限制因素。<br>
+      ③ 默认关闭大气折射；开启后采用光学视线常用折射系数 k=0.13（等效地球半径 R/0.87），
+      仅为量级参考。<br>
+      ④ 城市坐标、地标高度、国土面积等为公开常用数据，用于演示换算，不代表任何机构发布值。
+    </div>
+  </div>
+
+  <footer>
+    地球鼓包 · THE BULGE ｜ 图个好玩 · 大地图全员手搓赛参赛作品<br>
+    底图与地点检索：腾讯位置服务（腾讯地图 JavaScript API GL / WebService，GCJ-02 坐标系）。
+    球面几何计算全部在浏览器本地完成，不调用任何后端。
+  </footer>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

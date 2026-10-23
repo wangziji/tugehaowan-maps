@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>上坡 · UPHILL —— 从家到公司和从公司到家，从来不是同一段路</title>
+<script src="https://map.qq.com/api/gljs?v=1.exp&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<style>
+  :root{
+    --bg:#f5f7fa; --card:#ffffff; --ink:#1e2430; --ink2:#5a6577; --ink3:#8b95a6;
+    --line:#e3e8ef; --go:#2563eb; --bk:#ea580c; --gold:#b45309; --goldbg:#fff7ed;
+    --good:#0f766e; --warn:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:15px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1320px;margin:0 auto;padding:28px 20px 56px}
+  header h1{margin:0 0 6px;font-size:30px;letter-spacing:.5px}
+  header h1 span{color:var(--ink3);font-weight:400;font-size:19px;margin-left:10px}
+  header .sub{margin:0 0 18px;color:var(--ink2);font-size:16px;max-width:860px}
+  .hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:22px}
+  .hero .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .hero .k{font-size:12px;color:var(--ink3);letter-spacing:.4px}
+  .hero .v{font-size:26px;font-weight:700;margin-top:2px;line-height:1.2}
+  .hero .v small{font-size:14px;font-weight:500;color:var(--ink2)}
+  .hero .n{font-size:12px;color:var(--ink3);margin-top:4px}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+  .panel h3{margin:0 0 10px;font-size:14px;letter-spacing:.5px;color:var(--ink2);font-weight:600}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    border:1px solid var(--line);background:#fbfcfe;color:var(--ink2);
+    border-radius:999px;padding:6px 14px;font-size:14px;cursor:pointer;transition:.15s;
+  }
+  .chip:hover{border-color:#c3ccdb}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .row + .row{margin-top:12px}
+  .lab{font-size:13px;color:var(--ink2);min-width:76px}
+  input[type=range]{flex:1;min-width:180px;accent-color:var(--ink)}
+  .distv{font-variant-numeric:tabular-nums;font-weight:700;min-width:82px;text-align:right}
+  .hint{font-size:12px;color:var(--ink3);margin-top:6px}
+
+  .main{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:16px;align-items:stretch}
+  @media (max-width:1080px){ .main{grid-template-columns:minmax(0,1fr)} }
+  .mapcol{display:flex;flex-direction:column;min-width:0;gap:16px}
+  #map{width:100%;height:560px;flex:none;border-radius:14px;background:#eef1f5;border:1px solid var(--line)}
+  @media (max-width:1080px){ #map{height:400px} }
+  .stack{display:flex;flex-direction:column;gap:16px}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2);margin-top:10px}
+  .legend i{display:inline-block;width:22px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+
+  .ledger{display:flex;flex-direction:column;gap:8px}
+  .bcard{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;
+    cursor:pointer;transition:.15s;position:relative;
+  }
+  .bcard:hover{border-color:#c3ccdb}
+  .bcard.sel{border-color:var(--ink);box-shadow:0 0 0 2px rgba(30,36,48,.08)}
+  .bcard.best{background:var(--goldbg);border-color:#fcd9a8}
+  .bcard .top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .bcard .bn{font-weight:700;font-size:15px}
+  .bcard .rk{font-size:11px;color:var(--ink3)}
+  .bcard .rt{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+  .bcard .rt small{font-size:12px;font-weight:500;color:var(--ink2)}
+  .bcard .duo{display:flex;gap:10px;font-size:12.5px;color:var(--ink2);margin-top:2px}
+  .bcard .duo b{font-variant-numeric:tabular-nums}
+  .slope{height:5px;border-radius:3px;background:#eef1f5;margin-top:8px;position:relative;overflow:hidden}
+  .slope i{position:absolute;top:0;bottom:0;border-radius:3px}
+  .bcard .yr{font-size:12px;color:var(--ink3);margin-top:5px}
+  .tagbest{font-size:11px;color:var(--gold);font-weight:700;margin-left:6px}
+
+  .brow{display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:5px}
+  .brow .bl{width:34px;color:var(--ink2);text-align:right;flex:none}
+  .brow .bare{flex:1;min-width:0;height:15px;position:relative;background:#f2f5f9;border-radius:3px}
+  .brow .bare::before{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:#cfd7e3}
+  .brow .bare i{position:absolute;top:2px;bottom:2px;border-radius:2px}
+  .brow .bv{width:46px;flex:none;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink3);font-size:11.5px}
+
+  .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+  @media (max-width:1080px){ .two{grid-template-columns:minmax(0,1fr)} }
+  .rank{display:flex;flex-direction:column;gap:7px}
+  .rank .r{display:flex;align-items:center;gap:10px;font-size:13.5px}
+  .rank .nm{width:44px;color:var(--ink2)}
+  .rank .bar{flex:1;height:14px;background:#eef1f5;border-radius:4px;overflow:hidden}
+  .rank .bar i{display:block;height:100%;background:var(--go);border-radius:4px}
+  .rank .vl{width:52px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .worst{background:#fff;border:1px solid var(--line);border-left:4px solid var(--bk);border-radius:10px;padding:12px 14px;margin-top:14px}
+  .worst .t{font-size:13px;color:var(--ink3)}
+  .worst .m{font-size:15px;margin-top:3px;line-height:1.6}
+  .worst .m b{color:var(--warn)}
+
+  .note{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-top:16px;
+        font-size:13.5px;color:var(--ink2);line-height:1.8}
+  .note h3{color:var(--ink);margin:0 0 8px;font-size:15px}
+  .note h3 + p{margin-top:0}
+  .note ul{margin:6px 0 0;padding-left:20px}
+  .note code{background:#f1f4f8;padding:1px 5px;border-radius:4px;font-size:12.5px}
+  .disc{margin-top:14px;padding:11px 14px;background:#fff8f8;border:1px solid #f3d2d2;border-radius:10px;
+        color:#7c2d2d;font-size:13px}
+  .foot{margin-top:22px;font-size:12.5px;color:var(--ink3);text-align:center;line-height:1.8}
+  .err{display:none;margin:10px 0;padding:10px 14px;background:#fff1f1;border:1px solid #f3c9c9;
+       border-radius:10px;color:#8a2020;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>上坡 · UPHILL <span>从家到公司和从公司到家，从来不是同一段路</span></h1>
+    <p class="sub">地图是斜的。单向道、禁左转、环线匝道让「去」和「回」变成两条不同的路 ——
+       你每天上班是上坡，下班未必是下坡。这个作品用七座城市 336 对真实驾车路线，
+       把这份不对称量出来，告诉你<b>把家安在公司的哪个方位，一年能省多少小时</b>。</p>
+  </header>
+
+  <div class="hero" id="hero"></div>
+
+  <div class="panel">
+    <div class="row">
+      <span class="lab">城市</span>
+      <div class="chips" id="cityChips"></div>
+    </div>
+    <div class="row">
+      <span class="lab">公司位置</span>
+      <div class="chips" id="centerChips"></div>
+    </div>
+    <div class="row">
+      <span class="lab">直线距离</span>
+      <input type="range" id="dist" min="800" max="15000" step="100" value="3000">
+      <span class="distv" id="distV">3.0 km</span>
+      <div class="chips" id="layerChips"></div>
+    </div>
+    <div class="hint" id="distHint"></div>
+  </div>
+
+  <div class="err" id="err"></div>
+
+  <div class="main">
+    <div class="mapcol">
+      <div id="map"></div>
+      <div class="legend">
+        <span><i style="background:var(--go)"></i>去程（公司 → 家）</span>
+        <span><i style="background:var(--bk)"></i>回程（家 → 公司）</span>
+        <span><i style="background:var(--gold)"></i>往返最快的方位</span>
+        <span style="color:var(--ink3)">蓝色与橙色分开，说明这两条路真的不一样</span>
+      </div>
+
+      <div class="panel">
+        <h3>坡向条图 · 每个方位到底有多斜</h3>
+        <div id="rose"></div>
+        <div class="hint">从中线向两侧伸出：<span style="color:var(--go)">右侧（蓝）= 去程更远更久</span>，
+          <span style="color:var(--bk)">左侧（橙）= 回程更远更久</span>。长度 = 不对称度，满格 60%。</div>
+      </div>
+
+      <div class="panel">
+        <h3>七城坡度排行 · 哪座城的路最斜</h3>
+        <div class="rank" id="rank"></div>
+        <div class="worst" id="worst"></div>
+      </div>
+    </div>
+    <div>
+      <div class="panel" style="margin-bottom:12px">
+        <h3>八方位账本 · 按「往返总时长」排序</h3>
+        <div class="hint" style="margin:-4px 0 10px">点一张卡，地图上只画它</div>
+      </div>
+      <div class="ledger" id="ledger"></div>
+    </div>
+  </div>
+
+  <div class="note">
+    <h3>算的是什么</h3>
+    <p>对每一个「中心点 × 方位 × 直线距离」，分别真实调用腾讯地图驾车路线规划两次：
+       <b>去程</b>（中心 → 外围）与<b>回程</b>（外围 → 中心）。两者的距离与时长并不相等。</p>
+    <p><b>不对称度</b> <code>asym = (去 − 回) / ((去 + 回) / 2)</code>。
+       正值 = 去程更贵；负值 = 回程更贵。这不是误差，是单行线、禁左转、环线匝道与潮汐车道写进路网里的方向性。</p>
+    <ul>
+      <li><b>不对称是普遍的</b>：336 对路线里 78% 的时长差超过 5%，41% 超过 15%。</li>
+      <li><b>路越长，坡越平</b>：直线 3 公里档平均差 19.7%，8 公里档降到 11.6% —— 长距离走干道和快速路，
+          单向组织的影响被摊薄了。</li>
+      <li><b>方位效应是真实的，但不是城市级常数</b>：同一个方位在 3 公里和 8 公里两个尺度上，
+          去回方向一致的比例是 61%（显著高于随机的 50%，但远不到 100%）。
+          所以页面给的是<b>你家附近这块地的实测地形</b>，而不是一句「住在东边更快」。</li>
+      <li><b>往返 ≠ 单程 × 2</b>：这才是租房时真正该看的数。页面默认按每年 250 个工作日折算成小时。</li>
+    </ul>
+    <h3 style="margin-top:16px">数据与口径</h3>
+    <ul>
+      <li>七座城市（北京 / 上海 / 广州 / 深圳 / 重庆 / 成都 / 西安）× 每城 3 个采样中心 × 8 个方位
+          × 2 个距离档（3000 m、8000 m）× 2 个方向 = <b>672 次真实驾车路线规划调用，零失败</b>，
+          采集于 2026-10-18 凌晨。</li>
+      <li>地图上的折线是这些路线的真实几何（已按 60 米最小间距降采样）。</li>
+      <li>3000 m 与 8000 m 之间是线性插值；<b>超出 3000–8000 m 的部分是外推</b>，页面会明确标注。</li>
+      <li>路线规划返回的是<b>该时刻的历史路况估计</b>，不是实时路况，也不含你出发的确切时刻。</li>
+    </ul>
+    <div class="disc">
+      <b>说明</b>：以上数字是 2026-10-18 一次采集快照下的统计规律，用于说明「去与回不对称」这一机制，
+      <b>不是导航结果，不作为租房、购房或通勤决策的唯一依据</b>。实际通勤时长随出发时刻、天气、施工与交通管制变化。
+      采样中心为各城市具有代表性的地点，用作业主输入的公司位置的替身，属<b>演示数据</b>。
+    </div>
+  </div>
+
+  <div class="foot">
+    上坡 · UPHILL —— 底图与路线来自腾讯位置服务（JSAPI GL + WebService 驾车路线规划）
+  </div>
+</div>
+
+<script src="./data.js"></script>
+<script src="./model.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

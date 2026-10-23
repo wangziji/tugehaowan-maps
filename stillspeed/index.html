@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>静坐时速 · STILL SPEED —— 你坐着不动，正以几十万 km/h 在宇宙里飞奔</title>
+<meta name="description" content="在地图上点任意一点，算出这块地上的人此刻正以多快的速度、朝哪个方向被地球、太阳和银河系带着飞。">
+<script src="https://map.qq.com/api/gljs?v=1&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<style>
+  :root{
+    --bg:#070b11;--panel:#0f1620;--panel2:#131c28;--line:#22303f;--txt:#e8eef6;
+    --dim:#8fa3b8;--dim2:#5f7186;--brand:#ffd166;--blue:#3aa0ff;--pink:#ff5fb0;--green:#4dd4ac;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:
+      radial-gradient(900px 500px at 15% -5%, #14243a 0%, transparent 60%),
+      radial-gradient(700px 420px at 95% 0%, #2a1428 0%, transparent 55%),
+      var(--bg);
+    color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
+    padding:26px 16px 56px;line-height:1.6}
+  .w{max-width:720px;margin:0 auto}
+  h1{font-size:24px;margin:0 0 6px;letter-spacing:.5px}
+  h1 em{font-style:normal;color:var(--brand)}
+  .lead{color:var(--dim);font-size:13.5px;margin:0 0 4px}
+  .who{color:var(--dim2);font-size:11.5px;margin:0 0 20px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+  .card.tight{padding:14px}
+
+  /* 主数字 */
+  .hero{background:linear-gradient(160deg,#141d2b 0%,#0d1420 100%);border:1px solid #26364a;
+        border-radius:18px;padding:20px 18px;margin-bottom:14px;text-align:center}
+  .hero .lbl{font-size:12px;color:var(--dim);letter-spacing:2px}
+  .hero .num{font-size:40px;font-weight:800;letter-spacing:-1px;color:var(--brand);
+             font-variant-numeric:tabular-nums;line-height:1.15;margin:6px 0 2px}
+  .hero .unit{font-size:13px;color:var(--dim)}
+  .hero .wan{font-size:15px;color:#fff;font-weight:700;margin-top:8px}
+  .hero .meta{font-size:11.5px;color:var(--dim2);margin-top:8px}
+
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .row>.card{flex:1 1 260px;margin-bottom:0}
+
+  h2{font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:7px}
+  h2 i{width:3px;height:14px;background:var(--brand);border-radius:2px;display:inline-block}
+
+  /* 分量条 */
+  .bar-row{margin-bottom:13px}
+  .bar-top{display:flex;align-items:center;gap:7px;font-size:13px}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .bname{flex:1;font-weight:600}
+  .bval{color:var(--dim);font-variant-numeric:tabular-nums;font-size:12.5px}
+  .bar{height:7px;background:#0a1119;border-radius:4px;margin:6px 0 4px;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:4px;transition:width .25s}
+  .bsub{font-size:11.5px;color:var(--dim2)}
+
+  /* 罗盘 */
+  .dirhead{display:flex;gap:16px;align-items:center}
+  .dirhead svg{flex:none}
+  .kv{font-size:12px;color:var(--dim);margin:3px 0}
+  .kv b{color:var(--txt);font-weight:600}
+  .dircon{font-size:18px;font-weight:800;color:var(--brand);margin-bottom:2px}
+  .dirnote{font-size:12px;color:var(--dim);margin-top:9px;line-height:1.65}
+
+  /* 地图 */
+  #mapwrap{position:relative}
+  #map{width:100%;height:340px;border-radius:12px;background:#0a1119}
+  .maphint{font-size:11.5px;color:var(--dim2);margin-top:9px;line-height:1.6}
+  .legend{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim2);margin-top:8px}
+  .legend .grad{flex:1;height:8px;border-radius:4px;
+    background:linear-gradient(90deg,rgba(58,160,255,.10),rgba(150,190,190,.22),rgba(255,209,102,.33))}
+  #mapfail{display:none;background:#1a1218;border:1px solid #3d2230;color:#ffb3c8;
+    padding:12px;border-radius:12px;font-size:12.5px}
+
+  /* 控件 */
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{background:#0c131d;border:1px solid #22303f;color:var(--dim);border-radius:999px;
+    padding:6px 12px;font-size:12.5px;cursor:pointer;font-family:inherit;transition:.15s}
+  .chip:hover{border-color:#3d5570;color:var(--txt)}
+  .chip.on{background:#2c2410;border-color:var(--brand);color:var(--brand);font-weight:700}
+  .slider{margin-top:14px}
+  .slider label{display:flex;justify-content:space-between;font-size:12.5px;color:var(--dim);margin-bottom:6px}
+  .slider label b{color:var(--txt);font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;-webkit-appearance:none;height:4px;border-radius:2px;background:#1d2937;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+    background:var(--brand);border:3px solid #0b1017;cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--brand);
+    border:3px solid #0b1017;cursor:pointer}
+  .btn{background:#0c131d;border:1px solid #22303f;color:var(--dim);border-radius:10px;
+    padding:8px 14px;font-size:12.5px;cursor:pointer;font-family:inherit}
+  .btn:hover{border-color:var(--brand);color:var(--brand)}
+  .switch{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--dim);margin-top:14px}
+  .switch input{width:16px;height:16px;accent-color:var(--brand)}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  td{padding:6px 0;border-bottom:1px solid #16202c;color:var(--dim)}
+  td:last-child{text-align:right;color:var(--txt);font-weight:700;font-variant-numeric:tabular-nums}
+  tr:last-child td{border-bottom:none}
+
+  .big{font-size:22px;font-weight:800;color:var(--brand);font-variant-numeric:tabular-nums}
+  .note{font-size:11.5px;color:var(--dim2);line-height:1.7;margin-top:8px}
+  .foot{font-size:11.5px;color:var(--dim2);line-height:1.8;border-top:1px solid var(--line);
+    padding-top:14px;margin-top:6px}
+  .foot b{color:var(--dim)}
+  .warn{background:#1a1218;border:1px solid #3d2230;border-radius:12px;padding:12px;
+    font-size:11.5px;color:#e2b9c6;line-height:1.75}
+</style>
+</head>
+<body>
+<div class="w">
+
+  <h1>静坐时速 · <em>STILL SPEED</em></h1>
+  <p class="lead">你坐着一动没动。但地球在转、地球在绕太阳跑、太阳系在绕银河系跑 —— 在地图上点任意一点，看看这块地上的人此刻正以多快的速度、朝哪个方向飞。</p>
+  <p class="who">腾讯地图 JSAPI GL · 全部天文计算在浏览器本地完成 · 演示/科普级数值模型</p>
+
+  <div class="hero">
+    <div class="lbl">此刻这座城市的宇宙时速</div>
+    <div class="num" id="speed">—</div>
+    <div class="unit">km/h</div>
+    <div class="wan" id="speedWan">—</div>
+    <div class="meta"><span id="speedMs">—</span> ｜ <span id="when">—</span> ｜ <span id="at">—</span></div>
+  </div>
+
+  <div class="card">
+    <h2><i></i>拆开看，这个速度是谁给的</h2>
+    <div id="bars"></div>
+    <div class="switch">
+      <input type="checkbox" id="cmb">
+      <span>离谱模式：再把「相对宇宙微波背景」的 369 km/s 加上去（用宇宙本身当参照物）</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><i></i>那你正朝着哪儿飞</h2>
+    <div class="dirhead">
+      <svg id="compass" width="124" height="124" viewBox="0 0 124 124"></svg>
+      <div style="flex:1;min-width:170px">
+        <div class="dircon" id="dirCon">—</div>
+        <div class="kv">方位 <b id="dirAz">—</b> ｜ 仰角 <b id="dirAlt">—</b></div>
+        <div class="kv" id="dirDist">—</div>
+      </div>
+    </div>
+    <div class="dirnote" id="dirAltNote">—</div>
+  </div>
+
+  <div class="card tight" id="mapwrap">
+    <h2><i></i>地表自转速度场（点地图任意位置换地方）</h2>
+    <div id="map"></div>
+    <div class="legend"><span>慢</span><span class="grad"></span><span>快</span></div>
+    <div class="maphint">颜色深浅 = 该纬度地球自转把你甩出去的速度：赤道 1,674 km/h，两极 0。
+      点击地图任意位置即可重算；下面的按钮可直接跳到几个代表性城市。</div>
+  </div>
+  <div id="mapfail">地图底图加载失败（离线或 Key 受限）。页面所有数值与朝向计算不依赖地图，仍可正常使用。</div>
+
+  <div class="card">
+    <h2><i></i>换个地方 / 换个时间</h2>
+    <div class="chips" id="chips"></div>
+    <div class="slider">
+      <label>时刻（地方时）<b id="hourTxt">—</b></label>
+      <input type="range" id="hour" min="0" max="1439" step="5" value="720">
+    </div>
+    <div class="slider">
+      <label>一年中的第几天<b id="doyTxt">—</b></label>
+      <input type="range" id="doy" min="1" max="365" step="1" value="180">
+    </div>
+    <div style="margin-top:14px"><button class="btn" id="now">回到此刻</button></div>
+  </div>
+
+  <div class="card">
+    <h2><i></i>同一块地，到底会变多少</h2>
+
+    <div style="font-size:12.5px;color:var(--txt);font-weight:700;margin-bottom:8px">① 相对太阳（自转 + 公转）</div>
+    <table>
+      <tr><td>今天最快</td><td id="soMax">—</td></tr>
+      <tr><td>今天最慢</td><td id="soMin">—</td></tr>
+      <tr><td>差多少</td><td id="soDiff">—</td></tr>
+    </table>
+    <div class="note" id="soTime">—</div>
+    <div class="note">半夜，地球自转把你甩出去的方向刚好和公转同向，两者相加；正午则反向相减。
+      所以你每天中午都会自动「减速」一次，而你毫无感觉。</div>
+
+    <div style="font-size:12.5px;color:var(--txt);font-weight:700;margin:18px 0 8px">② 相对银河系中心（再叠上 220 km/s）</div>
+    <table>
+      <tr><td>今天最快</td><td id="gaMax">—</td></tr>
+      <tr><td>今天最慢</td><td id="gaMin">—</td></tr>
+      <tr><td>差多少</td><td id="gaDiff">—</td></tr>
+    </table>
+    <div class="note" id="gaTime">—</div>
+    <div class="note">注意这里的变化只有千分之几：因为 220 km/s 太大了，一天里自转那几百米每秒的摆动
+      被稀释得几乎看不见。<b>真正的大变化不在一天里，在一年里。</b></div>
+
+    <div style="font-size:12.5px;color:var(--txt);font-weight:700;margin:18px 0 8px">③ 一年之内（公转方向转一整圈）</div>
+    <table>
+      <tr><td>今年最快</td><td id="yrMax">—</td></tr>
+      <tr><td>今年最慢</td><td id="yrMin">—</td></tr>
+      <tr><td>差多少</td><td id="yrDiff">—</td></tr>
+    </table>
+    <div class="note" id="yrTime">—</div>
+    <div class="note">地球绕太阳跑一圈，公转速度的方向就在宇宙里转了 360°。
+      某几个月它和银河系的速度同向（你更快），另几个月反向（你更慢）——
+      这才是那个能差出十万 km/h 的量级。</div>
+  </div>
+
+  <div class="row">
+    <div class="card">
+      <h2><i></i>按 80 年算</h2>
+      <div class="big" id="lifeLy">—</div>
+      <div class="unit" style="font-size:12px;color:var(--dim)">光年</div>
+      <div class="note">约 <b id="lifeAu" style="color:var(--txt)">—</b> 个日地距离。
+        你这辈子哪儿也没去，也已经在宇宙里飞了这么远。</div>
+    </div>
+    <div class="card">
+      <h2><i></i>还有个更怪的</h2>
+      <div class="note" style="margin-top:0">
+        把「时间」那个滑块从 0 拖到 24：右边的罗盘箭头会转整整一圈。<br><br>
+        也就是说 —— <b style="color:var(--brand)">你以为你一直朝同一个方向飞，其实你飞的方向一天换一遍。</b><br><br>
+        不是你在转，是你脚下的地在转，而银河系那边一直指着同一个方向没动。
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="warn">
+      <b>数值声明</b>：本作品是科普级演示，不是精密星历。为让页面能在浏览器里实时算，模型做了简化：
+      地球公转按圆轨道处理（真实轨道为椭圆，速度在 29.3–30.3 km/s 之间变化）；
+      太阳系绕银心速度取 220 km/s 的常用近似值；忽略岁差、章动与光行差二阶项；
+      「地方时」按经度线性推算，不考虑时区与均时差。量级与方向结论成立，末位数字不具备精度意义。
+    </div>
+    <div class="foot">
+      <b>为什么必须有地图</b>：自转速度随纬度变化（cos φ），这是作品唯一的空间变量 ——
+      同样的时刻，漠河和三亚差出 400 km/h；这个差异只有画在地图上、能随手点到，才成立。
+      去掉地图，作品就退化成一个输入纬度算速度的计算器。<br>
+      <b>数据说明</b>：8 个预设城市的坐标来自腾讯位置服务地理编码接口（GCJ-02，真实接口数据）；
+      底图为腾讯地图 JSAPI GL；所有天文与速度计算在浏览器本地完成，运行时不调用任何接口。
+    </div>
+  </div>
+
+</div>
+<script src="./app.js"></script>
+<script>
+  if (window.__stillspeed_boot) {
+    if (document.readyState === 'complete') window.__stillspeed_boot();
+    else window.addEventListener('load', window.__stillspeed_boot);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>还剩几回 · HOW MANY TIMES LEFT</title>
+<style>
+:root{
+  --bg:#f6f3ee; --card:#fffdfa; --ink:#221f1a; --ink2:#5d564c; --ink3:#8d8478;
+  --line:#e3dcd1; --accent:#c0542c; --accent2:#2f6b5e; --warm:#e8ded1;
+  --shadow:0 1px 3px rgba(60,50,35,.07),0 8px 24px rgba(60,50,35,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+
+header.top{margin-bottom:22px}
+.kicker{font-size:12px;letter-spacing:.22em;color:var(--ink3);text-transform:uppercase;margin-bottom:8px}
+h1{font-size:31px;line-height:1.25;margin:0 0 6px;letter-spacing:-.01em}
+h1 .en{font-size:14px;letter-spacing:.16em;color:var(--ink3);font-weight:500;display:block;margin-top:6px}
+.lede{color:var(--ink2);font-size:15px;margin:10px 0 0;max-width:780px}
+
+.grid{display:grid;grid-template-columns:392px 1fr;gap:20px;align-items:start}
+@media(max-width:960px){.grid{grid-template-columns:1fr}}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.pad{padding:18px 18px 20px}
+.card h2{font-size:13px;margin:0 0 14px;color:var(--ink2);font-weight:600;letter-spacing:.04em}
+
+.presets{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+.preset{
+  border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 13px;
+  font-size:13px;cursor:pointer;color:var(--ink2);transition:.15s;
+}
+.preset:hover{border-color:var(--accent);color:var(--accent)}
+.preset.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+.field{margin-bottom:13px}
+.field label{display:block;font-size:12.5px;color:var(--ink2);margin-bottom:5px}
+.field label .hint{color:var(--ink3);font-size:11.5px}
+input[type=text],input[type=number],select{
+  width:100%;border:1px solid var(--line);background:#fff;border-radius:9px;
+  padding:8px 10px;font-size:14px;color:var(--ink);font-family:inherit;outline:none;
+}
+input:focus,select:focus{border-color:var(--accent)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 0;font-size:13px;cursor:pointer;color:var(--ink2)}
+.seg button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+
+.toggle{display:flex;align-items:center;gap:9px;margin:16px 0 12px;font-size:13.5px;color:var(--ink2);cursor:pointer}
+.toggle input{width:16px;height:16px;accent-color:var(--accent)}
+.hidden{display:none}
+
+#map{width:100%;height:340px;border-radius:12px;background:#ece7de;overflow:hidden}
+.mapwrap{position:relative}
+.mapbadge{
+  position:absolute;left:12px;bottom:12px;background:rgba(255,253,250,.94);
+  border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12.5px;color:var(--ink2);
+  box-shadow:0 2px 8px rgba(60,50,35,.10);
+}
+.mapbadge b{color:var(--ink);font-size:14px}
+.maperr{
+  position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  background:#f3ede4;color:#8a4a2c;font-size:13.5px;text-align:center;padding:24px;border-radius:12px;
+}
+
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+@media(max-width:700px){.hero{grid-template-columns:1fr}}
+.bignum{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+.bignum .lab{font-size:12.5px;color:var(--ink3);letter-spacing:.03em}
+.bignum .val{font-size:44px;line-height:1.05;margin:6px 0 2px;font-weight:600;letter-spacing:-.02em}
+.bignum .val .u{font-size:16px;font-weight:400;color:var(--ink2);margin-left:4px}
+.bignum .sub{font-size:13px;color:var(--ink2)}
+.bignum.hot .val{color:var(--accent)}
+.bignum.cool .val{color:var(--accent2)}
+
+.bars{margin-top:14px}
+.bar{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:13px}
+.bar .nm{width:74px;color:var(--ink2);flex:none}
+.bar .tr{flex:1;height:22px;background:#efe9e0;border-radius:6px;overflow:hidden}
+.bar .fl{height:100%;border-radius:6px}
+.bar .vv{width:118px;text-align:right;color:var(--ink);flex:none;font-variant-numeric:tabular-nums}
+
+table.opts{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:4px}
+table.opts th,table.opts td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:right}
+table.opts th:first-child,table.opts td:first-child{text-align:left}
+table.opts th{font-size:12px;color:var(--ink3);font-weight:600}
+table.opts td.net{font-weight:600}
+.pos{color:var(--accent2)} .neg{color:#a8462c}
+
+.note{font-size:12.5px;color:var(--ink3);margin-top:10px;line-height:1.6}
+.disc{
+  margin-top:20px;border:1px solid #e0cdb6;background:#fdf6ea;border-radius:12px;padding:14px 16px;
+  font-size:12.5px;color:#7a6242;line-height:1.7;
+}
+.disc b{color:#6b4f2e}
+footer{margin-top:34px;font-size:12px;color:var(--ink3);line-height:1.8;border-top:1px solid var(--line);padding-top:16px}
+code{background:#efe9e0;padding:1px 5px;border-radius:4px;font-size:12px}
+.err{color:#a8462c;font-size:13px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">图个好玩 · 大地图全员手搓赛</div>
+  <h1>还剩几回
+    <span class="en">HOW MANY TIMES LEFT — 把「以后再说」换算成一个数字</span>
+  </h1>
+  <p class="lede">
+    你以为你和某个人、某个地方之间，还剩下很多次。把这个「很多」算出来，它通常是一个两位数。
+    再把它换算成小时 —— 你大概会想调整点什么。
+  </p>
+</header>
+
+<div class="grid">
+
+  <!-- ============ 左：输入 ============ -->
+  <div class="card pad">
+    <h2>选一个场景，或自己填</h2>
+    <div class="presets" id="presets"></div>
+
+    <div class="row2">
+      <div class="field">
+        <label>你的年龄</label>
+        <input type="number" id="youAge" min="0" max="100" step="1" value="35">
+      </div>
+      <div class="field">
+        <label>你的性别</label>
+        <div class="seg" id="youSex">
+          <button data-v="male" class="on">男</button>
+          <button data-v="female">女</button>
+        </div>
+      </div>
+    </div>
+
+    <label class="toggle">
+      <input type="checkbox" id="withPerson" checked>
+      <span>这件事涉及另一个人（会同时算上两个人的存活概率）</span>
+    </label>
+
+    <div id="otherBlock">
+      <div class="row2">
+        <div class="field">
+          <label>对方年龄</label>
+          <input type="number" id="otherAge" min="0" max="100" step="1" value="62">
+        </div>
+        <div class="field">
+          <label>对方性别</label>
+          <div class="seg" id="otherSex">
+            <button data-v="male">男</button>
+            <button data-v="female" class="on">女</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row3">
+      <div class="field">
+        <label>每年几次</label>
+        <input type="number" id="perYear" min="0" max="365" step="0.5" value="2">
+      </div>
+      <div class="field">
+        <label>每次相处<span class="hint"> 小时</span></label>
+        <input type="number" id="hoursEach" min="0" max="168" step="0.5" value="5">
+      </div>
+      <div class="field">
+        <label>单程路上<span class="hint"> 小时</span></label>
+        <input type="number" id="travelH" min="0" max="40" step="0.5" value="6">
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>你在的城市</label>
+        <input type="text" id="cityA" value="北京">
+      </div>
+      <div class="field" id="cityBWrap">
+        <label>对方 / 目的城市</label>
+        <input type="text" id="cityB" value="长沙">
+      </div>
+    </div>
+
+    <div class="note">
+      里程由本地球面公式计算，不依赖任何联网接口。城市名解析失败时自动回落到内置城市表。
+    </div>
+    <div class="err hidden" id="formErr"></div>
+  </div>
+
+  <!-- ============ 右：地图 + 结果 ============ -->
+  <div>
+    <div class="card pad">
+      <h2>你们之间</h2>
+      <div class="mapwrap">
+        <div id="map"></div>
+        <div class="mapbadge" id="mapBadge">直线距离 <b>—</b></div>
+        <div class="maperr" id="mapErr">地图加载失败，结果数字不受影响，仍可正常使用。</div>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="bignum hot">
+        <div class="lab">这辈子，还能发生</div>
+        <div class="val" id="vTimes">—<span class="u">次</span></div>
+        <div class="sub" id="sTimes">—</div>
+      </div>
+      <div class="bignum">
+        <div class="lab">这些次数加起来</div>
+        <div class="val" id="vDays">—<span class="u">天</span></div>
+        <div class="sub" id="sDays">—</div>
+      </div>
+    </div>
+
+    <div class="card pad" style="margin-top:16px">
+      <h2>为了这些相处，你要付出多少</h2>
+      <div class="bars" id="bars"></div>
+      <div class="note" id="ratioNote">—</div>
+    </div>
+
+    <div class="card pad" style="margin-top:16px">
+      <h2>如果调整一下，能换回多少（净收益 = 多出的相处 − 多出的路上时间）</h2>
+      <table class="opts">
+        <thead><tr><th>改法</th><th>相处变化</th><th>路上变化</th><th>净收益</th></tr></thead>
+        <tbody id="optBody"></tbody>
+      </table>
+      <div class="note" id="optNote">—</div>
+    </div>
+
+    <div class="card pad" style="margin-top:16px">
+      <h2>反推：想再攒够 <span id="tgtLab">500</span> 小时相处，每年得多少次？</h2>
+      <input type="range" id="targetRange" min="50" max="3000" step="50" value="500" style="width:100%">
+      <div style="font-size:14px;margin-top:8px" id="revOut">—</div>
+    </div>
+
+    <div class="disc">
+      <b>关于这些数字，有几句必须说清楚。</b><br>
+      ① 所有数字都来自<b>群体统计生命表</b>（中国 2020 年七普口径，男 75.37 岁 / 女 80.88 岁），
+      它描述的是「和你同年龄同性别的一大群人平均会怎样」，
+      <b>不是对你或任何具体个人寿命的预测</b>，也不构成任何医疗、财务或人生决策建议。<br>
+      ② 「还能发生几次」是数学期望值 —— 期望值不等于承诺，真实结果可能远高于也可能远低于它。<br>
+      ③ 本页所有城市、年龄、频次均为<b>演示数据</b>，请替换成你自己的情况再看。<br>
+      ④ 如果你现在正因为这个数字感到难受，请把它当成一个提醒，而不是一道判决。
+    </div>
+  </div>
+</div>
+
+<footer>
+  数据来源：中国 2020 年第七次全国人口普查分性别平均预期寿命（男 75.37 / 女 80.88）；
+  分年龄死亡率基线取自 China age-specific mortality forecast（uc3m e-archivo），
+  经「年龄平移 + 低龄段替换为 2020 年实测婴儿死亡率」两步标定，使积分出的 e(0) 命中官方口径。
+  两人共同存活年数按 ∫S₁(t)·S₂(t)dt 计算，而非简单取 min。距离为 Haversine 球面距离。
+  地图能力由腾讯地图提供。
+</footer>
+
+</div>
+
+<script src="https://map.qq.com/api/gljs?v=1.exp&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

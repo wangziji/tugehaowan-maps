@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>路过 · PASSING BY —— 你每天路过多少个地方，进去过几个</title>
+<script src="https://map.qq.com/api/gljs?v=1.exp&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --ink:#1b2230; --ink2:#5a6478; --ink3:#8a93a6;
+    --line:#e2e6ee; --accent:#e4572e; --accent2:#1f6feb; --ok:#d94f2b; --weak:#2f6fd0;
+    --bg3:#c3cad6; --soft:#eef1f6;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:14px; line-height:1.6;
+  }
+  .wrap{max-width:1240px;margin:0 auto;padding:20px 16px 48px}
+  header.top{margin-bottom:16px}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:.5px}
+  h1 .en{font-size:15px;color:var(--ink3);font-weight:400;letter-spacing:2px;margin-left:8px}
+  .sub{color:var(--ink2);font-size:14px;margin:0}
+  .sub b{color:var(--accent)}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+  .panel h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+  .panel h2 .tag{font-size:11px;color:var(--ink3);font-weight:400;border:1px solid var(--line);border-radius:20px;padding:1px 8px}
+
+  .ctl{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+  .fld{display:flex;flex-direction:column;gap:4px}
+  .fld label{font-size:12px;color:var(--ink3)}
+  select,input[type=range]{font:inherit}
+  select{padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);min-width:150px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;background:#fff;padding:6px 12px;font:inherit;color:var(--ink2);cursor:pointer;border-right:1px solid var(--line)}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--accent);color:#fff}
+  .hint{font-size:12px;color:var(--ink3)}
+
+  .grid2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;align-items:start}
+  @media (max-width:960px){.grid2{grid-template-columns:minmax(0,1fr)}}
+
+  #map{width:100%;height:520px;border-radius:10px;background:var(--soft);border:1px solid var(--line)}
+  @media (max-width:640px){#map{height:380px}}
+  #mapmsg{margin-top:6px;font-size:12px;color:var(--ok);min-height:18px}
+  #mapmsg.warn{color:#b3320c;background:#fdeee7;border-radius:6px;padding:4px 8px}
+
+  .kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px}
+  @media (max-width:640px){.kpis{grid-template-columns:minmax(0,1fr)}}
+  .kpi{background:var(--soft);border-radius:10px;padding:10px 12px}
+  .kpi .v{font-size:26px;font-weight:600;letter-spacing:-.5px;line-height:1.15;color:var(--accent)}
+  .kpi .k{font-size:12px;color:var(--ink3)}
+  .kpi .n{font-size:11px;color:var(--ink3);margin-top:2px}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  thead th{color:var(--ink3);font-weight:500;font-size:12px}
+  tr.rec td{background:#fff4ef;font-weight:600}
+  tr.base td{color:var(--ink2)}
+  .pill{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+
+  .bars{display:flex;flex-direction:column;gap:6px}
+  .bar{display:grid;grid-template-columns:96px minmax(0,1fr) 46px;gap:8px;align-items:center;font-size:12px}
+  .bar .t{color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar .track{background:var(--soft);border-radius:4px;height:12px;position:relative}
+  .bar .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--accent2)}
+  .bar .fill.s{background:var(--accent)}
+  .bar .fill.w{background:var(--weak)}
+  .bar .fill.b{background:var(--bg3)}
+  .bar .n{text-align:right;color:var(--ink3)}
+
+  .prof{display:flex;align-items:flex-end;gap:2px;height:70px;margin-top:6px}
+  .prof i{flex:1 1 0;background:var(--accent);border-radius:2px 2px 0 0;min-height:1px;opacity:.85}
+  .axis{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-top:2px}
+
+  .absurd{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+  .ab{background:var(--soft);border-radius:10px;padding:10px 12px}
+  .ab .v{font-size:18px;font-weight:600;color:var(--ink)}
+  .ab .k{font-size:12px;color:var(--ink3);margin-top:2px}
+
+  ul.poi{list-style:none;margin:8px 0 0;padding:0;max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+  ul.poi li{display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid #f0f2f6;font-size:13px}
+  ul.poi li:last-child{border-bottom:0}
+  ul.poi li label{display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;min-width:0}
+  ul.poi li span.nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  ul.poi li span.ct{color:var(--ink3);font-size:11px;flex:none}
+  ul.poi li span.ds{color:var(--ink3);font-size:11px;flex:none;width:52px;text-align:right}
+
+  .note{font-size:12px;color:var(--ink3);line-height:1.7}
+  .note b{color:var(--ink2)}
+  .disc{margin-top:10px;padding:10px 12px;background:#fff8f4;border:1px solid #f4d9cc;border-radius:8px;font-size:12px;color:#8a4b2a}
+  footer{margin-top:20px;font-size:12px;color:var(--ink3);text-align:center}
+  .err{color:#b3320c;background:#fdeee7;border-radius:6px;padding:6px 10px;font-size:12px;margin-top:6px;display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>路过 · PASSING BY<span class="en">PASSING BY</span></h1>
+  <p class="sub">你每天在这条路上<b>路过 <span id="k-nstrong">—</span> 个地方</b>，一年 <span id="k-trips">—</span> 趟，进去过的有几个？</p>
+</header>
+
+<div class="panel">
+  <div class="ctl">
+    <div class="fld">
+      <label>通勤线（示例组合）</label>
+      <select id="sel-pair"></select>
+    </div>
+    <div class="fld">
+      <label>绕行收益门槛：<span id="v-rate">0.8</span> 个/分钟</label>
+      <input type="range" id="rng-rate" min="0.2" max="4" step="0.1" value="0.8" style="width:190px">
+    </div>
+    <div class="fld">
+      <label>地图显示</label>
+      <div class="seg" id="seg-layer">
+        <button data-v="rec" class="on">直达 vs 推荐</button>
+        <button data-v="all">全部 5 条</button>
+      </div>
+    </div>
+    <div class="fld">
+      <label>&nbsp;</label>
+      <div class="seg" id="seg-poi">
+        <button data-v="dest" class="on">只画目的地</button>
+        <button data-v="all">全部分类</button>
+      </div>
+    </div>
+  </div>
+  <div class="hint" id="pair-hint" style="margin-top:8px"></div>
+  <div class="err" id="err"></div>
+</div>
+
+<div class="grid2">
+  <div>
+    <div class="panel" style="padding:10px">
+      <div id="map"></div>
+      <div id="mapmsg"></div>
+    </div>
+    <div class="panel">
+      <h2>绕行的边际收益 <span class="tag">多花的每一分钟，换回多少个地方</span></h2>
+      <table id="tbl-ladder">
+        <thead><tr><th>路线</th><th>里程</th><th>耗时</th><th>多花</th><th>沿途目的地</th><th>多路过</th><th>个/分钟</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="hint" id="ladder-msg" style="margin-top:8px"></div>
+      <svg id="curve" viewBox="0 0 520 190" style="width:100%;height:auto;margin-top:10px"></svg>
+    </div>
+  </div>
+
+  <div>
+    <div class="kpis">
+      <div class="kpi"><div class="v" id="k-year">—</div><div class="k">一年路过（次）</div><div class="n" id="k-year-n">—</div></div>
+      <div class="kpi"><div class="v" id="k-stranger">—</div><div class="k">天天路过却不认识</div><div class="n" id="k-stranger-n">—</div></div>
+      <div class="kpi"><div class="v" id="k-laps">—</div><div class="k">一年里程绕地球</div><div class="n" id="k-laps-n">—</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>这条路沿途有什么 <span class="tag">按你路过的距离分层</span></h2>
+      <div class="bars" id="bars-band"></div>
+      <div class="hint" style="margin-top:8px">同一个数量，按「离你的车/你的脚有多远」再切一刀。</div>
+    </div>
+
+    <div class="panel">
+      <h2>目的地类型 <span class="tag">二级分类 TOP 10</span></h2>
+      <div class="bars" id="bars-cat"></div>
+      <div class="hint" style="margin-top:8px">多样性 <span id="k-H">—</span> bits —— 数字越高，这条路塞的东西越杂。</div>
+    </div>
+
+    <div class="panel">
+      <h2>沿途密度剖面 <span class="tag">把这条路切成 24 段</span></h2>
+      <div class="prof" id="prof"></div>
+      <div class="axis"><span>出发</span><span>中段</span><span>到达</span></div>
+    </div>
+
+    <div class="panel">
+      <h2>你进去过哪几个 <span class="tag">勾掉你认识的，剩下的就是天天见面从不认识</span></h2>
+      <div class="hint">下面是最贴着你路线的 40 个目的地 —— 它们全在你脚边十几米内，勾掉你进去过的：</div>
+      <ul class="poi" id="lst-poi"></ul>
+      <div class="hint" style="margin-top:8px" id="known-hint"></div>
+    </div>
+
+    <div class="panel">
+      <h2>荒诞换算 <span class="tag">同一批数字的另一副面孔</span></h2>
+      <div class="absurd" id="absurd"></div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="note">
+    <b>数据来源与口径：</b>路线与 POI 全部来自腾讯地图 WebService 的真实数据（驾车路线规划 + 周边检索，采集时间见页脚），
+    通勤线是为演示选取的地标组合，<b>不是任何真实个人的通勤</b>。分类三分法（强目的地 / 弱目的地 / 背景）是本作唯一的主观口径，
+    页面上明确给出，便于你不同意时自行折算。路况为采集时刻快照，不同时段耗时会有差异。
+  </div>
+  <div class="disc">
+    本页给出的「推荐绕行」是基于采集时刻路况与 POI 密度的内容收益估算，<b>不是导航建议</b>；
+    实际出行请以实时导航与道路状况为准，不要为了多看几个地方而忽略安全。
+  </div>
+</div>
+
+<footer>
+  路过 · PASSING BY · 演示作品 · 地图数据 © 腾讯地图 · 采集于 <span id="gen-at">—</span>
+</footer>
+</div>
+
+<script src="./data.js"></script>
+<script src="./model.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

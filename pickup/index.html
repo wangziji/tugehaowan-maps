@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>出口博弈 · THE CURB —— 离你最近的那个地铁口，有 87.7% 的概率不是开车出去最快的那个</title>
+<script src="https://map.qq.com/api/gljs?v=1.exp&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<style>
+  :root{
+    --bg:#f5f7fa; --card:#ffffff; --ink:#1e2430; --ink2:#5a6577; --ink3:#8b95a6;
+    --line:#e3e8ef; --blue:#1d4ed8; --orange:#ea580c; --gold:#b45309;
+    --red:#dc2626; --good:#0f766e; --teal:#0d9488; --grey:#94a3b8;
+    --walk:#0d9488; --drive:#2563eb;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+    font:15px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1320px;margin:0 auto;padding:28px 20px 56px}
+  header h1{margin:0 0 6px;font-size:30px;letter-spacing:.5px}
+  header h1 span{color:var(--ink3);font-weight:400;font-size:19px;margin-left:10px}
+  header .sub{margin:0 0 18px;color:var(--ink2);font-size:16px;max-width:980px}
+  header .sub b{color:var(--ink)}
+
+  .hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:12px;margin-bottom:18px}
+  .hero .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .hero .k{font-size:12px;color:var(--ink3);letter-spacing:.4px}
+  .hero .v{font-size:26px;font-weight:700;margin-top:2px;line-height:1.2;font-variant-numeric:tabular-nums}
+  .hero .v small{font-size:14px;font-weight:500;color:var(--ink2)}
+  .hero .n{font-size:12px;color:var(--ink3);margin-top:4px;line-height:1.45}
+  .hero .box.hi{background:#fff7ed;border-color:#fed7aa}
+  .hero .box.hi .v{color:var(--orange)}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+  .panel h3{margin:0 0 10px;font-size:14px;letter-spacing:.5px;color:var(--ink2);font-weight:600}
+  .panel h3 em{font-style:normal;color:var(--ink3);font-weight:400;font-size:12.5px;margin-left:8px}
+
+  .ctl{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+  .fld label{display:block;font-size:12px;color:var(--ink3);margin-bottom:4px}
+  select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;
+    background:#fbfcfe;color:var(--ink);font-size:14px}
+  .sld{display:flex;align-items:center;gap:9px}
+  .sld input[type=range]{flex:1;min-width:0;accent-color:var(--blue)}
+  .sld .val{font-variant-numeric:tabular-nums;font-size:13px;color:var(--ink2);min-width:74px;text-align:right}
+  .chk{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink2);padding-top:20px}
+  .chk input{accent-color:var(--blue);width:15px;height:15px}
+
+  .cols{display:grid;gap:16px;margin-bottom:16px;grid-template-columns:minmax(0,1fr)}
+  @media(min-width:1040px){.cols{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}}
+  #map{width:100%;height:520px;border-radius:14px;border:1px solid var(--line);
+    background:#eef2f7;overflow:hidden;position:relative}
+  .mapbox{position:relative;min-width:0}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:12px;color:var(--ink2)}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+  .mapmsg{position:absolute;left:10px;top:10px;z-index:9;background:#fff8f8;border:1px solid #fecaca;
+    color:#b91c1c;border-radius:8px;padding:6px 10px;font-size:12px;display:none;max-width:80%}
+
+  .exitrow{border:1px solid var(--line);border-radius:11px;padding:10px 12px;margin-bottom:9px;background:#fbfcfe}
+  .exitrow.best{border-color:#5eead4;background:#f0fdfa;box-shadow:0 0 0 2px #99f6e4 inset}
+  .exitrow.near{border-color:#fdba74;background:#fff7ed}
+  .exitrow .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .exitrow .nm{font-weight:700;font-size:15px}
+  .exitrow .tag{font-size:11px;border-radius:999px;padding:2px 8px;background:var(--ink3);color:#fff}
+  .exitrow .tag.b{background:var(--good)}
+  .exitrow .tag.n{background:var(--orange)}
+  .exitrow .tot{font-variant-numeric:tabular-nums;font-size:13px;color:var(--ink2)}
+  .exitrow .tot b{font-size:17px;color:var(--ink)}
+  .bar{display:flex;height:20px;border-radius:6px;overflow:hidden;margin:7px 0 5px;background:#e8edf4}
+  .bar div{height:100%;font-size:10px;color:#fff;display:flex;align-items:center;justify-content:center;
+    overflow:hidden;white-space:nowrap}
+  .parts{display:flex;gap:14px;font-size:12px;color:var(--ink2);flex-wrap:wrap}
+  .parts span{white-space:nowrap;font-variant-numeric:tabular-nums}
+  .parts i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+  .chartbox{width:100%;overflow:hidden}
+  canvas#scatter{width:100%;height:auto;display:block;border-radius:10px;background:#fbfcfe}
+  .axisnote{font-size:12px;color:var(--ink3);margin-top:8px;line-height:1.55}
+
+  .guess{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(238px,1fr))}
+  .gcard{border:1px solid var(--line);border-radius:12px;padding:13px 14px;background:#fbfcfe}
+  .gcard .gd{font-size:14px;font-weight:600;margin-bottom:2px}
+  .gcard .gv{font-size:25px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15}
+  .gcard .gv small{font-size:13px;font-weight:500;color:var(--ink2)}
+  .gcard .gn{font-size:12px;color:var(--ink3);margin-top:5px;line-height:1.5}
+  .gcard.weak{border-color:#fecaca;background:#fff8f8}
+  .gcard.weak .gv{color:var(--red)}
+
+  .ins{margin:0;padding:0;display:grid;gap:10px}
+  .ins li{list-style:none;background:#fbfcfe;border:1px solid var(--line);border-radius:10px;padding:11px 13px;
+    font-size:13.5px;color:var(--ink2);line-height:1.62}
+  .ins li b{color:var(--ink)}
+  .ins li .h{display:block;color:var(--ink);font-weight:700;margin-bottom:3px;font-size:14px}
+
+  .note{font-size:12.5px;color:var(--ink3);line-height:1.7}
+  .note b{color:var(--ink2)}
+  footer{margin-top:22px;font-size:12px;color:var(--ink3);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>出口博弈 · THE CURB<span>你在哪个口等车</span></h1>
+    <p class="sub">同一个地铁站有五六个出口。走哪个口出去上车，<b>决定了你这趟车要绕多远</b>。
+      我们实测了 <b>6 座城市、19 座地铁站、100 个出口</b>，各去三个方向的门到门时间——
+      结论是：你凭直觉挑的那个口，<b>基本等于随手乱猜</b>。</p>
+  </header>
+
+  <div class="hero" id="hero"></div>
+
+  <div class="panel">
+    <h3>挑一个站，挑一个方向<em>地图上的点就是这个站的每个出口，颜色越红＝从这里上车要多绕越久</em></h3>
+    <div class="ctl">
+      <div class="fld"><label for="selCity">城市</label><select id="selCity"></select></div>
+      <div class="fld"><label for="selSt">地铁站</label><select id="selSt"></select></div>
+      <div class="fld"><label for="selDst">要去哪儿</label><select id="selDst"></select></div>
+      <div class="fld"><label for="sldSpeed">步行速度（米/分钟）</label>
+        <div class="sld"><input type="range" id="sldSpeed" min="40" max="130" step="5" value="80">
+          <span class="val" id="sldSpeedV">80</span></div></div>
+      <div class="chk"><input type="checkbox" id="chkMeasured" checked><label for="chkMeasured">用实测步行时长（含过街绕行）</label></div>
+    </div>
+  </div>
+
+  <div class="cols">
+    <div class="mapbox">
+      <div id="map"></div>
+      <div class="mapmsg" id="mapmsg"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="panel" style="margin-bottom:0">
+      <h3>这个站的每个出口<em>条长 = 门到门时间，绿＝最快，橙＝你本能会走的最近的口</em></h3>
+      <div id="exits"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>你以为「朝着目的地那个口」更快<em>实测：朝向角与绕行代价的相关系数 r = <span id="rtheta"></span>，等于没关系</em></h3>
+    <div class="chartbox"><canvas id="scatter" width="900" height="320"></canvas></div>
+    <p class="axisnote" id="axisnote"></p>
+  </div>
+
+  <div class="panel">
+    <h3>三种直觉，全部不及格<em>命中率都在「随手乱猜」的 95% 波动区间内（置换检验 400 次）</em></h3>
+    <div class="guess" id="guess"></div>
+  </div>
+
+  <div class="panel">
+    <h3>结论</h3>
+    <ul class="ins" id="ins"></ul>
+  </div>
+
+  <div class="panel">
+    <h3>方法与免责</h3>
+    <p class="note" id="note"></p>
+  </div>
+
+  <footer>腾讯地图 JSAPI GL 底图 + 腾讯位置服务实测 · 2026-10-18 · 一次快照的示例数据，不是导航结果</footer>
+</div>
+
+<script src="./data.js"></script>
+<script src="./model.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

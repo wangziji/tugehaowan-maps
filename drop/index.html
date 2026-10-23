@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>落点 · THE DROP</title>
+<style>
+:root{
+  --bg:#0b1017; --panel:#131b26; --panel2:#182231; --line:#243141;
+  --txt:#e8eef6; --dim:#93a7bd; --dim2:#61738a;
+  --brand:#ffd166; --blue:#3aa0ff; --green:#4dd4ac; --red:#ff6b6b; --gray:#5b6b80;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
+  line-height:1.65;-webkit-font-smoothing:antialiased}
+.w{max-width:900px;margin:0 auto;padding:34px 18px 70px}
+h1{font-size:27px;margin:0 0 6px;letter-spacing:.4px}
+h1 em{font-style:normal;color:var(--brand)}
+.sub{color:var(--dim);font-size:14px;margin:0 0 4px}
+.lead{color:#c3d2e2;font-size:14.5px;margin:14px 0 0;
+  border-left:3px solid var(--brand);padding-left:12px}
+.head{font-size:15px;margin:10px 0 0;color:#f0e6cf;line-height:1.75}
+.head b{color:var(--brand)}
+.meta{color:var(--dim2);font-size:12px;margin:12px 0 26px}
+h2{font-size:16px;margin:30px 0 12px;color:#dbe6f2}
+h2 span{color:var(--dim2);font-size:12px;font-weight:400;margin-left:8px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{background:var(--panel2);border:1px solid var(--line);color:var(--dim);
+  border-radius:8px;padding:5px 11px;font-size:13px;cursor:pointer;user-select:none}
+.chip:hover{border-color:var(--dim2)}
+.chip.on{background:#2c2410;border-color:var(--brand);color:var(--brand);font-weight:700}
+label.fld{font-size:12px;color:var(--dim2);margin-right:6px}
+select{background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+  border-radius:8px;padding:6px 9px;font-size:13px;max-width:100%}
+input[type=range]{width:100%;accent-color:var(--brand);margin:6px 0 0}
+.sliderwrap{margin-top:14px}
+.slab{display:flex;justify-content:space-between;font-size:12.5px;color:var(--dim)}
+.slab b{color:var(--brand);font-size:15px}
+.kpis{display:grid;gap:12px;margin-top:16px}
+@media(min-width:640px){.kpis{grid-template-columns:repeat(4,1fr)}}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 13px}
+.kpi .k{font-size:11.5px;color:var(--dim2)}
+.kpi .v{font-size:21px;font-weight:700;margin-top:3px;letter-spacing:.3px}
+.kpi .u{font-size:11.5px;color:var(--dim);font-weight:400;margin-left:3px}
+.kpi.hl{border-color:var(--brand);background:#241d0e}
+.decision{margin-top:12px;background:#141d2a;border:1px solid var(--line);
+  border-left:3px solid var(--brand);border-radius:10px;padding:13px 15px;font-size:14.5px}
+.decision b{color:var(--brand)}
+.decision .alt{color:var(--dim);font-size:13px;display:block;margin-top:5px}
+
+/* 地图 */
+#map{width:100%;height:420px;border-radius:12px;border:1px solid var(--line);margin-top:14px;background:#0e1520}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin-top:10px}
+.legend i{display:inline-block;width:16px;height:4px;border-radius:2px;margin-right:5px;vertical-align:middle}
+#mapmsg{font-size:12px;color:var(--dim2);margin-top:8px;min-height:18px}
+
+/* 落点条 */
+.bars{margin-top:6px}
+.bar{margin-bottom:11px}
+.bar .hd{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;gap:8px}
+.bar .hd .nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .hd .nm i{font-style:normal;color:var(--dim2);font-weight:400;font-size:11.5px;margin-left:6px}
+.bar .hd .tt{color:var(--dim);font-size:12.5px;white-space:nowrap}
+.bar .hd .tt b{color:var(--txt);font-size:14px}
+.track{position:relative;height:24px;border-radius:6px;overflow:hidden;background:#0e1520;border:1px solid var(--line)}
+.seg{position:absolute;left:0;top:0;height:100%}
+.seg.nom{background:#28374b}
+.seg.real{background:var(--brand)}
+.bar .tick{position:absolute;top:0;height:100%;width:2px;background:var(--red);opacity:.85}
+.bar.best .track{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+.bar.best .hd .nm{color:var(--brand)}
+.bar.worst .hd .nm{color:var(--red)}
+.bar.on .hd .nm{color:var(--blue)}
+.bar .note{font-size:11.5px;color:var(--dim2);margin-top:4px}
+.bar{cursor:pointer}
+
+/* 散点 */
+.scatter{width:100%;height:300px;margin-top:10px}
+.axis{font-size:11px;fill:var(--dim2)}
+
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+th,td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--dim2);font-weight:500;font-size:12px}
+td.rk{color:var(--brand);font-weight:700}
+.sml{font-size:12px;color:var(--dim2)}
+.foot{margin-top:34px;font-size:12px;color:var(--dim2);line-height:1.8;
+  border-top:1px solid var(--line);padding-top:14px}
+.foot b{color:var(--dim)}
+.warn{margin-top:14px;background:#1b1418;border:1px solid #3d2029;border-radius:10px;
+  padding:11px 13px;font-size:12.5px;color:#d8b6bf}
+.note{font-size:12.5px;color:var(--dim);margin-top:10px}
+</style>
+</head>
+<body>
+<div class="w">
+  <h1>落点 · <em>THE DROP</em></h1>
+  <p class="sub">把你送到哪儿，比送多远更值钱。</p>
+  <p class="lead">计价器只算你在车上的那段时间。可司机送完你，还得空着车开到下一单去 —— 那段时间没人付钱。
+     把「送到那儿之后要空驶多久」算进分母，同一张计价器上的两单，真实时薪能差两倍多。
+     这个差值只由一件事决定：你让他把你放下车的那个地方。</p>
+  <p class="head" id="headline">—</p>
+  <p class="meta">作者：markzwang（王紫骥）　|　6 城 × 16 个真实区域 × 960 段真实驾车路线　|　数据：腾讯位置服务（距离矩阵 / 地点检索 / 逆地理）</p>
+
+  <div class="panel">
+    <div class="row" id="cityChips"></div>
+    <div class="row" style="margin-top:12px">
+      <label class="fld" for="originSel">现在你在</label>
+      <select id="originSel"></select>
+    </div>
+    <div class="sliderwrap">
+      <div class="slab"><span>空驶时间计入多少</span><span><b id="kVal">100</b>%</span></div>
+      <input type="range" id="kRange" min="0" max="150" step="10" value="100">
+      <div class="slab sml" style="margin-top:2px"><span>0%（只看计价器）</span><span>150%（空驶比载客更熬人）</span></div>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi hl"><div class="k">计价器上的时薪</div><div class="v" id="kNom">—<span class="u">元/h</span></div></div>
+    <div class="kpi"><div class="k">把空驶算进去</div><div class="v" id="kReal">—<span class="u">元/h</span></div></div>
+    <div class="kpi"><div class="k">同样车费的两单，最差能差</div><div class="v" id="kSpread">—<span class="u">倍</span></div></div>
+    <div class="kpi"><div class="k">司机的时间有多少在空跑</div><div class="v" id="kEmpty">—<span class="u">%</span></div></div>
+  </div>
+
+  <h2>地图 <span>颜色 = 落点的真实时薪；圈 = 送完你之后，他平均要空驶多远去找下一单</span></h2>
+  <div id="map"></div>
+  <div class="legend">
+    <span><i style="background:#4dd4ac"></i>落点很值</span>
+    <span><i style="background:#ffd166"></i>一般</span>
+    <span><i style="background:#ff6b6b"></i>落点很亏</span>
+    <span><i style="background:#3aa0ff"></i>空驶半径</span>
+    <span><i style="background:#5b6b80"></i>直线示意（非实际路线）</span>
+  </div>
+  <div id="mapmsg">—</div>
+
+  <h2>从这儿出发，送到哪儿最值 <span>深色条 = 计价器时薪，亮色条 = 算上空驶后的真实时薪；红的刻度是这一档的中位</span></h2>
+  <div class="bars" id="bars"></div>
+  <p class="note" id="barsNote">—</p>
+
+  <h2>同样车费的两单，差在哪 <span>横轴车费，纵轴真实时薪；同一条竖带里点的高度差，就是落点造成的</span></h2>
+  <svg class="scatter" id="scatter" viewBox="0 0 860 320" preserveAspectRatio="xMidYMid meet"></svg>
+
+  <h2>六城对比 <span>空驶中位 = 在这座城市随机落一个点，平均要空驶多久才能接到下一单</span></h2>
+  <table id="cityTable"></table>
+
+  <h2>结论</h2>
+  <div class="decision" id="concl">—</div>
+
+  <div class="warn">
+    <b>演示数据 / 估算说明。</b>车费按各城市公开出租车计价规则的简化模型估算（起步价 + 里程费 + 时长费），不是实际账单；
+    「区域需求强度」用每个点周边 1 km 内的地点检索数量（公司 + 美食）作代理，不是真实订单量；
+    城市被离散成 16 个采样点，真实路网远比它密。本作品给的是<b>可横比的相对量</b>，不是司机的真实收入。
+  </div>
+
+  <div class="foot">
+    <b>数据：</b>腾讯位置服务 —— 距离矩阵（驾车，实测 6×16×16 段）、地点检索（周边 1 km 计数）、逆地理（区域命名）。运行时零网络请求，全部数据已预生成打包。<br>
+    <b>方法：</b>区域需求强度 w → 下一单起点分布 = 需求权重 × 距离衰减核 exp(−d/3km) → 落点 j 的期望空驶时长 A(j) =
+    Σ P(i|j) · 路网耗时(j→i)。真实时薪 = 车费 ÷ (载客时长 + 期望空驶时长)。同区单按 900 米 / 3 分钟计入，否则热点区会算出 0 分钟这种荒谬值。<br>
+    <b>已知边界：</b>上海、深圳这类单中心城市里，「那儿有多少需求」和「离市中心多远」高度共线，无法区分谁在起作用 —— 页面只给数字，不替它们下结论。
+  </div>
+</div>
+
+<script src="https://map.qq.com/api/gljs?v=1.exp&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<script src="./data.js"></script>
+<script src="./model.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>祖先洪流 · ANCESTOR FLOOD —— 往回数 29 代，你的族谱就从一棵树炸成了一张网</title>
+<meta name="description" content="你有 2 的 n 次方个祖先名额，可地球上从来没有住过这么多人。在地图上点一点，看你的族谱在哪一代开始自我重叠。">
+<script src="https://map.qq.com/api/gljs?v=1&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<style>
+  :root{
+    --bg:#080a0f;--panel:#11151d;--panel2:#161c27;--line:#242c3a;--txt:#e9edf4;
+    --dim:#93a1b5;--dim2:#5f6d80;--brand:#ff8a4c;--brand2:#ffc46b;--blue:#3aa0ff;
+    --red:#ff4d5e;--green:#4dd4ac;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
+    overflow:hidden}
+  #map{position:fixed;inset:0;background:#0a0d13}
+  #map .tmap-logo,.tmap-copyright{opacity:.35}
+
+  /* 顶部标题 */
+  .top{position:fixed;left:0;right:0;top:0;z-index:20;padding:14px 16px 0;
+    background:linear-gradient(180deg,rgba(8,10,15,.94) 0%,rgba(8,10,15,.72) 62%,transparent 100%);
+    pointer-events:none}
+  .top h1{font-size:19px;margin:0;letter-spacing:.3px;line-height:1.3}
+  .top h1 em{font-style:normal;color:var(--brand)}
+  .top p{margin:3px 0 0;font-size:11.5px;color:var(--dim);line-height:1.5}
+  .top .who{color:var(--dim2);font-size:10.5px}
+
+  /* 右侧面板 */
+  .panel{position:fixed;z-index:25;right:14px;top:96px;bottom:14px;width:352px;
+    background:rgba(17,21,29,.95);backdrop-filter:blur(10px);
+    border:1px solid var(--line);border-radius:16px;
+    display:flex;flex-direction:column;overflow:hidden}
+  .scroll{overflow-y:auto;padding:15px 16px 18px;scrollbar-width:thin}
+  .scroll::-webkit-scrollbar{width:6px}
+  .scroll::-webkit-scrollbar-thumb{background:#2b3444;border-radius:3px}
+
+  .hero{text-align:center;padding:4px 0 12px;border-bottom:1px solid var(--line);margin-bottom:13px}
+  .hero .lbl{font-size:10.5px;color:var(--dim2);letter-spacing:2px}
+  .hero .gen{font-size:34px;font-weight:800;color:var(--brand2);line-height:1.1;
+    font-variant-numeric:tabular-nums;margin:4px 0 1px}
+  .hero .gen small{font-size:14px;color:var(--dim);font-weight:600}
+  .hero .yr{font-size:12.5px;color:var(--txt)}
+  .hero .era{font-size:11px;color:var(--dim2);margin-top:2px}
+
+  .slots{font-size:12px;color:var(--dim);text-align:center;margin-bottom:3px}
+  .slots b{display:block;font-size:26px;color:var(--brand);font-weight:800;
+    font-variant-numeric:tabular-nums;line-height:1.2;word-break:break-all}
+  .slots .eq{font-size:11px;color:var(--dim2);margin-top:1px}
+
+  .cmp{margin:14px 0 10px}
+  .cmp .row{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px}
+  .cmp .row span:first-child{color:var(--dim)}
+  .cmp .row span:last-child{font-variant-numeric:tabular-nums;color:var(--txt)}
+  .track{height:9px;background:#1c2431;border-radius:5px;overflow:hidden;position:relative}
+  .track i{display:block;height:100%;border-radius:5px;transition:width .18s}
+  .track .fillA{background:linear-gradient(90deg,#ff8a4c,#ffc46b)}
+  .track .fillB{background:linear-gradient(90deg,#3aa0ff,#6fc0ff)}
+  .cmp .scale{display:flex;justify-content:space-between;font-size:10px;color:var(--dim2);margin-top:3px}
+
+  .state{border-radius:11px;padding:10px 12px;font-size:12px;line-height:1.6;margin-bottom:12px}
+  .state.ok{background:#101f1a;border:1px solid #1e4437;color:#9fe3c8}
+  .state.bad{background:#241015;border:1px solid #5a1f2a;color:#ffb3ba}
+  .state b{color:#fff}
+
+  .kv{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .kv div{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:9px 10px}
+  .kv .k{font-size:10.5px;color:var(--dim2)}
+  .kv .v{font-size:15px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums;
+    margin-top:2px;word-break:break-all;line-height:1.3}
+
+  .ctl{margin-bottom:12px}
+  .ctl label{display:flex;justify-content:space-between;font-size:11.5px;color:var(--dim);margin-bottom:6px}
+  .ctl label b{color:var(--brand2);font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;-webkit-appearance:none;height:6px;border-radius:3px;
+    background:#222b3a;outline:none;margin:0}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;
+    border-radius:50%;background:var(--brand);border:3px solid #1a1f2a;cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;
+    background:var(--brand);border:3px solid #1a1f2a;cursor:pointer}
+  .ticks{display:flex;justify-content:space-between;font-size:9.5px;color:var(--dim2);margin-top:4px}
+  .ticks .hot{color:var(--red);font-weight:700}
+
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .chips button{flex:none;min-width:0;padding:5px 11px;font-size:11.5px;border-radius:20px}
+
+  .btns{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap}
+  button{flex:1;min-width:74px;background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+    border-radius:9px;padding:8px 6px;font-size:12px;cursor:pointer;font-family:inherit}
+  button:hover{border-color:var(--brand)}
+  button.on{background:#3a2410;border-color:var(--brand);color:var(--brand2);font-weight:700}
+  button.play{background:linear-gradient(135deg,#ff8a4c,#ffc46b);color:#22160a;font-weight:800;border:none}
+
+  .sec{font-size:11px;color:var(--dim2);letter-spacing:1.5px;margin:14px 0 8px;
+    border-top:1px solid var(--line);padding-top:12px}
+  .fact{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--brand);
+    border-radius:0 10px 10px 0;padding:9px 11px;font-size:11.5px;line-height:1.65;
+    color:#c3cede;margin-bottom:8px}
+  .fact b{color:#fff}
+  .fact .n{color:var(--brand2);font-weight:800;font-variant-numeric:tabular-nums}
+  .note{font-size:10.5px;color:var(--dim2);line-height:1.7;margin-top:12px;
+    border-top:1px solid var(--line);padding-top:10px}
+
+  /* 溢出全屏提示 */
+  #boom{position:fixed;inset:0;z-index:30;pointer-events:none;opacity:0;transition:opacity .3s;
+    background:radial-gradient(circle at 50% 50%,transparent 26%,rgba(255,45,66,.30) 78%,rgba(255,45,66,.52) 100%)}
+  #boom.on{opacity:1}
+  #boomTxt{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:31;
+    pointer-events:none;text-align:center;opacity:0;transition:opacity .3s}
+  #boomTxt.on{opacity:1}
+  #boomTxt .b1{font-size:13px;color:#ff9aa4;letter-spacing:3px}
+  #boomTxt .b2{font-size:30px;font-weight:900;color:#fff;text-shadow:0 0 26px rgba(255,45,66,.85);
+    line-height:1.25;margin-top:2px}
+
+  .mapnote{font-size:11px;line-height:1.6;color:var(--brand2);background:rgba(255,138,76,.08);
+    border:1px solid rgba(255,138,76,.3);border-radius:9px;padding:7px 10px;margin-top:10px}
+  .hint{position:fixed;left:14px;bottom:14px;z-index:20;background:rgba(17,21,29,.9);
+    border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:11.5px;color:var(--dim);
+    max-width:280px;line-height:1.55}
+  .hint b{color:var(--brand2)}
+
+  @media(max-width:860px){
+    .panel{left:10px;right:10px;top:auto;bottom:10px;width:auto;height:47vh;max-height:47vh}
+    .top{padding:10px 12px 0}
+    .top h1{font-size:16px}
+    .top p{font-size:10.5px}
+    .hint{display:none}
+    #map{bottom:47vh}
+    .hero .gen{font-size:28px}
+    .slots b{font-size:22px}
+    .kv{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="boom"></div>
+<div id="boomTxt"><div class="b1">族谱不再是树</div><div class="b2" id="boomBig">名额超过全人类</div></div>
+
+<div class="top">
+  <h1>祖先洪流 · <em>ANCESTOR FLOOD</em></h1>
+  <p>你有 2 的 n 次方个祖先名额。可地球上从来没有住过这么多人。</p>
+  <p class="who">作者：markzwang（王紫骥）｜2026-10</p>
+</div>
+
+<div class="panel">
+  <div class="scroll">
+
+    <div class="hero">
+      <div class="lbl">往 回 数</div>
+      <div class="gen" id="genN">0 <small>代</small></div>
+      <div class="yr" id="genYear">公元 2026 年</div>
+      <div class="era" id="genEra">中华人民共和国</div>
+    </div>
+
+    <div class="slots">这一代的理论祖先名额
+      <b id="slotNum">1</b>
+      <div class="eq" id="slotEq">2⁰ = 你自己</div>
+    </div>
+
+    <div class="cmp">
+      <div class="row"><span>祖先名额</span><span id="cmpA">1</span></div>
+      <div class="track"><i class="fillA" id="barA" style="width:0%"></i></div>
+      <div class="row" style="margin-top:7px"><span>当时全人类</span><span id="cmpB">82.0 亿</span></div>
+      <div class="track"><i class="fillB" id="barB" style="width:0%"></i></div>
+      <div class="scale"><span id="scaleL">同一条刻度：谁更长</span><span id="ratioTxt">1 : 8.2×10⁹</span></div>
+    </div>
+
+    <div class="state ok" id="stateBox">把「名额」当成要占的座位：还装得下。</div>
+
+    <div class="kv">
+      <div><div class="k">装下他们需要的圆</div><div class="v" id="radiusV">—</div></div>
+      <div><div class="k">圆内面积</div><div class="v" id="areaV">—</div></div>
+      <div><div class="k">当时人口密度</div><div class="v" id="densV">—</div></div>
+      <div><div class="k">需要几个地球</div><div class="v" id="earthV">—</div></div>
+    </div>
+
+    <div class="mapnote" id="mapNote" style="display:none"></div>
+
+    <div class="ctl">
+      <label>世代滑块 <b id="genShow">0</b></label>
+      <input type="range" id="genRange" min="0" max="40" step="1" value="0">
+      <div class="ticks">
+        <span>0 · 你</span><span>10</span><span>20</span><span class="hot" id="wallTick">29 · 炸点</span><span>40</span>
+      </div>
+    </div>
+
+    <div class="btns">
+      <button class="play" id="btnPlay">▶ 播放洪流</button>
+      <button id="btnHere">◎ 回到我站的点</button>
+    </div>
+    <div class="chips" id="cityChips"></div>
+    <div class="btns">
+      <button id="btnWorld" class="on">全球视角</button>
+      <button id="btnCN">中国视角</button>
+    </div>
+    <div class="btns">
+      <button data-gen="25">代距 25 年</button>
+      <button data-gen="30" class="on">30 年</button>
+      <button data-gen="35">35 年</button>
+    </div>
+
+    <div class="sec">三 个 反 常 识</div>
+    <div class="fact"><b>① 炸点在第 <span class="n" id="f1n">29</span> 代。</b>
+      那一代你要 <span class="n" id="f1a">5.37 亿</span> 个祖先名额，而当时全球只有
+      <span class="n" id="f1b">3.63 亿</span> 人。往前一步，族谱必然开始自我重叠 —— 它不再是树，是网。</div>
+    <div class="fact"><b>② 代距怎么设都撞在同一代。</b>
+      按 25 / 30 / 35 年一代分别算，炸点<b>都是第 29 代</b>。变的只是落在公元 1301 / 1156 / 1011 年。</div>
+    <div class="fact"><b>③ 往回 167 代（约 5000 年前），名额是 10⁵⁰ 量级。</b>
+      那也是研究给出的「全人类共同祖先点」附近 —— 那一刻活着的人只有两种：
+      要么是今天<b>所有人</b>的共同祖先，要么一个后代都没留下。</div>
+
+    <div class="note">
+      <b>演示数据说明</b>：历史人口为公开研究（HYDE / McEvedy &amp; Jones / 联合国 WPP / 《中国人口史》）的
+      <b>估算值</b>，锚点之间按对数线性插值；代距、世代—年份映射为简化假设。
+      「祖先名额」= 2ⁿ 的<b>理论上限</b>，真实族谱因近交、迁移、记录缺失远小于此 —— 本作品用它说明的
+      恰恰是：上限本身就已经不可能成立。圆形覆盖范围只按人口密度折算，不代表任何真实分布。<br>
+      底图与地点服务：腾讯地图 JSAPI GL。
+    </div>
+
+  </div>
+</div>
+
+<div class="hint">在地图上<b>点任意一点</b> = 「我站在这里」。圆 = 让这一代每个祖先都占到一个活人，需要多大一片地。</div>
+
+<script src="./model.js"></script>
+<script src="./cities.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

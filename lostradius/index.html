@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>失联半径 · LOST RADIUS</title>
+<style>
+:root{
+  --bg:#f4f6f4; --card:#fffefb; --ink:#1f231f; --ink2:#565f57; --ink3:#8b948c;
+  --line:#e2e6e1; --accent:#1f6f5c; --accent2:#c0552e; --warm:#e8eae6;
+  --shadow:0 1px 3px rgba(30,40,35,.07),0 8px 24px rgba(30,40,35,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 64px}
+
+header.top{margin-bottom:22px}
+.kicker{font-size:12px;letter-spacing:.22em;color:var(--ink3);margin-bottom:8px}
+h1{font-size:31px;line-height:1.25;margin:0 0 6px;letter-spacing:-.01em}
+h1 .en{font-size:13px;letter-spacing:.16em;color:var(--ink3);font-weight:500;display:block;margin-top:7px}
+.lede{color:var(--ink2);font-size:15px;margin:10px 0 0;max-width:800px}
+
+.grid{display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start}
+@media(max-width:980px){.grid{grid-template-columns:1fr}}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.pad{padding:18px 18px 20px}
+.card h2{font-size:13px;margin:0 0 14px;color:var(--ink2);font-weight:600;letter-spacing:.04em}
+.card h2 .sub{font-weight:400;color:var(--ink3);font-size:12px}
+
+.presets{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+.preset{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 13px;font-size:13px;cursor:pointer;color:var(--ink2);transition:.15s}
+.preset:hover{border-color:var(--accent);color:var(--accent)}
+.preset.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+.field{margin-bottom:13px}
+.field label{display:block;font-size:12.5px;color:var(--ink2);margin-bottom:5px}
+.field label .hint{color:var(--ink3);font-size:11.5px}
+input[type=text],input[type=number],select{
+  width:100%;border:1px solid var(--line);background:#fff;border-radius:9px;
+  padding:8px 10px;font-size:14px;color:var(--ink);font-family:inherit;outline:none;
+}
+input:focus,select:focus{border-color:var(--accent)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 0;font-size:13px;cursor:pointer;color:var(--ink2)}
+.seg button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn{width:100%;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:9px;padding:9px 0;font-size:14px;cursor:pointer;font-family:inherit}
+.btn.ghost{background:#fff;color:var(--accent)}
+.btn.small{width:auto;padding:6px 12px;font-size:13px}
+
+input[type=range]{width:100%;accent-color:var(--accent)}
+.rv{float:right;color:var(--accent);font-variant-numeric:tabular-nums}
+
+.anchor{border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin-bottom:8px;background:#fff}
+.anchor .ln{display:flex;gap:6px;align-items:center}
+.anchor input[type=text]{flex:1;border:none;padding:2px 0;font-size:13.5px}
+.anchor .del{border:none;background:none;color:var(--ink3);cursor:pointer;font-size:16px;line-height:1;padding:0 2px}
+.anchor .del:hover{color:var(--accent2)}
+.anchor .meta{font-size:11.5px;color:var(--ink3);margin-top:3px;display:flex;gap:8px;align-items:center}
+.anchor .meta select{border:none;padding:0;width:auto;font-size:11.5px;color:var(--ink2);background:transparent}
+.anchor.home{border-color:var(--accent);background:#f2f8f6}
+
+#mapWrap{position:relative}
+#map{width:100%;height:520px;border-radius:14px;overflow:hidden;background:#eaece8}
+@media(max-width:980px){#map{height:400px}}
+#mapBadge{position:absolute;left:12px;top:12px;z-index:5;background:rgba(255,255,255,.94);border:1px solid var(--line);
+  border-radius:8px;padding:5px 10px;font-size:12px;color:var(--ink2);box-shadow:var(--shadow)}
+#mapErr{position:absolute;left:12px;right:12px;bottom:12px;z-index:5;background:#fff5f0;border:1px solid #f0c9b6;
+  color:#8a3d1c;border-radius:9px;padding:8px 11px;font-size:12.5px;display:none}
+#searchErr{margin-top:6px;font-size:12px;color:var(--accent2);display:none}
+
+.hero{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px}
+@media(max-width:860px){.hero{grid-template-columns:repeat(2,1fr)}}
+.bignum{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px;box-shadow:var(--shadow)}
+.bignum .lab{font-size:12px;color:var(--ink3);margin-bottom:6px}
+.bignum .val{font-size:30px;line-height:1.1;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.bignum .val .u{font-size:14px;font-weight:400;color:var(--ink2);margin-left:3px}
+.bignum .note{font-size:12px;color:var(--ink2);margin-top:7px;line-height:1.5}
+.bignum.hi .val{color:var(--accent)}
+.bignum.warn .val{color:var(--accent2)}
+
+.sect{margin-top:20px}
+table.tb{width:100%;border-collapse:collapse;font-size:13.5px}
+table.tb th,table.tb td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+table.tb th{color:var(--ink2);font-weight:600;font-size:12.5px}
+table.tb td.num{text-align:right;font-variant-numeric:tabular-nums}
+
+.logbar{margin-top:6px}
+.logbar .track{position:relative;height:10px;border-radius:5px;background:linear-gradient(90deg,#dfe7e3,#eef1ee);overflow:hidden}
+.logbar .fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:5px}
+.logbar .scale{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-top:4px}
+
+.blobs{display:flex;flex-direction:column;gap:7px}
+.blobrow{display:flex;align-items:center;gap:9px;font-size:13px}
+.blobrow .bar{height:9px;border-radius:5px;background:var(--accent);min-width:2px}
+.blobrow .nm{color:var(--ink2);white-space:nowrap}
+
+.note{font-size:12.5px;color:var(--ink3);line-height:1.6}
+.disc{margin-top:22px;border:1px solid var(--line);background:#fbfaf6;border-radius:12px;padding:14px 16px;font-size:12.5px;color:var(--ink2);line-height:1.7}
+.disc b{color:var(--ink)}
+footer.foot{margin-top:26px;font-size:12px;color:var(--ink3);line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">图个好玩 · 大地图全员手搓赛</div>
+  <h1>失联半径 · LOST RADIUS
+    <span class="en">走多远，这座城市就再没有一个你认识的地方</span>
+  </h1>
+  <p class="lede">你在地图上标出自己真正认识的地方——家、公司、常去的那家面馆、朋友的楼。
+  它们各自向外晕开一小片「我熟」的范围，叠起来就是这座城市里真正属于你的那块地。
+  它几乎总是比你以为的小几个数量级。</p>
+</header>
+
+<div class="grid">
+
+  <!-- ============ 左：控制 ============ -->
+  <div>
+    <div class="card pad">
+      <h2>场景预设 <span class="sub">先看看别人长什么样</span></h2>
+      <div class="presets" id="presets"></div>
+
+      <div class="field">
+        <label>城市</label>
+        <select id="citySel"></select>
+      </div>
+
+      <div class="field">
+        <label>我认识的地方 <span class="hint">在地图上点一下就能加</span></label>
+        <div id="anchorList"></div>
+        <div class="row2" style="margin-top:8px">
+          <button class="btn ghost small" id="addCenter">在地图中心加一个</button>
+          <button class="btn ghost small" id="clearAll">全部清空</button>
+        </div>
+      </div>
+
+      <div class="row2" style="margin-top:6px">
+        <div class="field">
+          <label>搜索地点 <span class="hint">回车</span></label>
+          <input type="text" id="q" placeholder="例如 三里屯太古里" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>哪儿是「家」</label>
+          <select id="homeSel"></select>
+        </div>
+      </div>
+      <div id="searchErr"></div>
+    </div>
+
+    <div class="card pad" style="margin-top:14px">
+      <h2>怎么算熟</h2>
+      <div class="field">
+        <label>熟悉半径 <span class="rv" id="rOut">0.70 km</span></label>
+        <input type="range" id="baseR" min="0.2" max="2" step="0.05" value="0.7">
+        <div class="note">一个地方走熟之后，你大概认得它周围这么大一圈。</div>
+      </div>
+      <div class="field">
+        <label>多熟算「熟」 <span class="rv" id="tOut">0.50</span></label>
+        <input type="range" id="tCore" min="0.3" max="0.8" step="0.02" value="0.5">
+        <div class="note">领地的边界画在熟悉度降到这个值的地方。</div>
+      </div>
+      <div class="field">
+        <label>失联线 <span class="rv" id="tlOut">0.05</span></label>
+        <input type="range" id="tLost" min="0.02" max="0.3" step="0.01" value="0.05">
+        <div class="note">从家往外走，熟悉度掉到这个值，就算走丢了。</div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>熟一个地方要跑几趟</label>
+          <input type="number" id="visits" min="1" max="60" step="1" value="7">
+        </div>
+        <div class="field">
+          <label>每周能去几个新地方</label>
+          <input type="number" id="perWeek" min="0.5" max="14" step="0.5" value="2">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 右：地图 ============ -->
+  <div id="mapWrap">
+    <div id="map"></div>
+    <div id="mapBadge">在地图上点一下，加一个你认识的地方</div>
+    <div id="mapErr"></div>
+  </div>
+</div>
+
+<!-- ============ 结论 ============ -->
+<div class="hero">
+  <div class="bignum hi">
+    <div class="lab">你真正拥有的</div>
+    <div class="val"><span id="vArea">–</span><span class="u">km²</span></div>
+    <div class="note" id="vShareNote">占全市 –</div>
+  </div>
+  <div class="bignum">
+    <div class="lab">等效半径</div>
+    <div class="val"><span id="vEquiv">–</span><span class="u">km</span></div>
+    <div class="note" id="vRefNote">相当于 –</div>
+  </div>
+  <div class="bignum warn">
+    <div class="lab">失联半径</div>
+    <div class="val"><span id="vLost">–</span><span class="u">km</span></div>
+    <div class="note" id="vLostNote">从家往任何方向走这么远 –</div>
+  </div>
+  <div class="bignum">
+    <div class="lab">铺满这座城需要</div>
+    <div class="val"><span id="vCopies">–</span><span class="u">个你</span></div>
+    <div class="note" id="vWeeksNote">换个城市从零开始要 –</div>
+  </div>
+</div>
+
+<div class="sect card pad">
+  <h2>你的领地有多大 <span class="sub">对数刻度，否则你那块会被压成一个像素</span></h2>
+  <div class="logbar">
+    <div class="track"><div class="fill" id="logFill" style="width:0%"></div></div>
+    <div class="scale"><span id="lg0">0.001 km²</span><span id="lg1">0.1</span><span id="lg2">10</span><span id="lg3">1000</span><span id="lg4">全市</span></div>
+  </div>
+  <div class="note" id="logNote" style="margin-top:8px"></div>
+</div>
+
+<div class="sect card pad">
+  <h2>飞地 <span class="sub">你的领地是连成一片的，还是几块互不挨着的孤岛</span></h2>
+  <div class="blobs" id="blobList"></div>
+  <div class="note" id="blobNote" style="margin-top:10px"></div>
+</div>
+
+<div class="sect card pad">
+  <h2>逐条对照</h2>
+  <table class="tb">
+    <thead><tr><th>量</th><th style="text-align:right">值</th><th>怎么来的</th></tr></thead>
+    <tbody id="tbBody"></tbody>
+  </table>
+</div>
+
+<div class="disc">
+  <b>说明与免责。</b>本工具的全部输入来自你自己在地图上标出的点，
+  熟悉半径、阈值、到访次数都是可调的假设，不是任何机构发布的统计数据；
+  输出只是一个把「我对这里熟不熟」翻译成面积和距离的<b>示意换算</b>，
+  不构成选址、搬家、治安或出行安全方面的任何建议，也不要拿它去判断一个地方危不危险。
+  页面里的场景预设均为<b>演示数据</b>。
+</div>
+
+<footer class="foot">
+  计算全部在浏览器本地完成：熟悉度核 f(d)=2^−(d/r)²，取各锚点的最大值后按阈值求等值区域面积，
+  面积用自适应网格积分（先按等值圆是否可能相交分簇，再逐簇积分，误差 &lt; 3%）；
+  单点情形可与解析式 πr²·log₂(1/t) 对拍。137 条数学断言 + 浏览器实测全部通过。
+  地图能力来自腾讯位置服务（JavaScript GL）。
+</footer>
+
+</div>
+
+<script charset="utf-8" src="https://map.qq.com/api/gljs?v=1.exp&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

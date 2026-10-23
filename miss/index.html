@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>错过 · THE MISS —— 每条路都藏着一两个你不能错过的弯</title>
+<script src="https://map.qq.com/api/gljs?v=1.exp&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<style>
+  :root{
+    --bg:#f5f7fa; --card:#ffffff; --ink:#1e2430; --ink2:#5a6577; --ink3:#8b95a6;
+    --line:#e3e8ef; --blue:#2563eb; --orange:#ea580c; --gold:#b45309;
+    --red:#dc2626; --dark:#7f1d1d; --good:#0f766e; --grey:#94a3b8;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+    font:15px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1320px;margin:0 auto;padding:28px 20px 56px}
+  header h1{margin:0 0 6px;font-size:30px;letter-spacing:.5px}
+  header h1 span{color:var(--ink3);font-weight:400;font-size:19px;margin-left:10px}
+  header .sub{margin:0 0 18px;color:var(--ink2);font-size:16px;max-width:900px}
+  .hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+  .hero .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .hero .k{font-size:12px;color:var(--ink3);letter-spacing:.4px}
+  .hero .v{font-size:26px;font-weight:700;margin-top:2px;line-height:1.2}
+  .hero .v small{font-size:14px;font-weight:500;color:var(--ink2)}
+  .hero .n{font-size:12px;color:var(--ink3);margin-top:4px}
+  .hero .box.hi{background:#fff7ed;border-color:#fed7aa}
+  .hero .box.hi .v{color:var(--orange)}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+  .panel h3{margin:0 0 10px;font-size:14px;letter-spacing:.5px;color:var(--ink2);font-weight:600}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px solid var(--line);background:#fbfcfe;color:var(--ink2);
+    border-radius:999px;padding:6px 14px;font-size:14px;cursor:pointer;transition:.15s}
+  .chip:hover{border-color:#c3ccdb}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .chip.on.mo{background:var(--orange);border-color:var(--orange)}
+
+  /* 单列时也要写 minmax(0,1fr)：隐式列是 auto，会被 TMap 固定尺寸的 canvas 撑到 766px，
+     窄屏直接横向溢出。两列同理，1fr = minmax(auto,1fr) 一样会被撑破。 */
+  .cols{display:grid;gap:16px;margin-bottom:16px;grid-template-columns:minmax(0,1fr)}
+  @media(min-width:1000px){.cols{grid-template-columns:minmax(0,1.55fr) minmax(0,1fr)}}
+  #map{width:100%;height:520px;border-radius:14px;border:1px solid var(--line);
+    background:#eef2f7;overflow:hidden;position:relative}
+  .mapbox{position:relative;min-width:0}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:12px;color:var(--ink2)}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+
+  .modes{display:grid;gap:10px}
+  .mrow{border:1px solid var(--line);border-radius:11px;padding:12px 13px;background:#fbfcfe;cursor:pointer;transition:.15s}
+  .mrow:hover{border-color:#c3ccdb}
+  .mrow.on{border-color:var(--orange);background:#fff7ed}
+  .mrow .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .mrow .nm{font-weight:700;font-size:15px}
+  .mrow .tm{font-size:12px;color:var(--ink3)}
+  .mrow .big{font-size:22px;font-weight:700;margin:4px 0 2px}
+  .mrow .sub2{font-size:12px;color:var(--ink3);line-height:1.5}
+  .bar{height:6px;border-radius:3px;background:#eef2f7;margin-top:7px;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:3px}
+
+  .fatal{background:#fff1f2;border-color:#fecdd3}
+  .fatal .big{color:var(--dark)}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13.5px;margin-top:8px}
+  .kv dt{color:var(--ink3)}
+  .kv dd{margin:0;font-weight:600}
+
+  .prof{width:100%;height:auto;display:block}
+  .rank{display:grid;gap:6px}
+  .rrow{display:grid;grid-template-columns:52px minmax(0,1fr) 92px;gap:10px;align-items:center;font-size:13px}
+  .rrow .cn{color:var(--ink2)}
+  .rrow .tb{height:18px;background:#eef2f7;border-radius:4px;overflow:hidden}
+  .rrow .tb i{display:block;height:100%;background:var(--orange);border-radius:4px}
+  .rrow .vv{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .rrow.me .cn{font-weight:700;color:var(--ink)}
+  .rrow.me .tb i{background:var(--red)}
+
+  .slider{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .slider input[type=range]{flex:1;min-width:200px;accent-color:var(--orange)}
+  .slider b{font-variant-numeric:tabular-nums}
+  .note{font-size:12.5px;color:var(--ink3);line-height:1.7;margin-top:8px}
+  .foot{margin-top:26px;font-size:12.5px;color:var(--ink3);line-height:1.8;
+    border-top:1px solid var(--line);padding-top:16px}
+  .foot b{color:var(--ink2)}
+  #err{display:none;margin:0 0 16px;padding:12px 14px;border-radius:10px;
+    background:#fff1f2;border:1px solid #fecdd3;color:var(--red);font-size:13.5px}
+  table.t{width:100%;border-collapse:collapse;font-size:13px}
+  table.t th,table.t td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.t th{color:var(--ink3);font-weight:600}
+  table.t td.n{text-align:right;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>错过 · THE MISS<span>每条路都藏着一两个你不能错过的弯</span></h1>
+    <p class="sub">导航说「300 米后左转」，你没转。这一个弯，你要付多少代价？
+      我们把每一条真实路线拆成一个个弯，逐个模拟「该转没转、直着冲过去」，重新规划到终点，
+      量出差了多少米。然后发现一件事：<b>同一个弯，开车错过要比走路错过贵几十倍。</b></p>
+  </header>
+
+  <div id="err"></div>
+
+  <div class="hero" id="hero"></div>
+
+  <div class="panel">
+    <h3>城市</h3>
+    <div class="chips" id="cityChips"></div>
+    <h3 style="margin-top:14px">出行方式</h3>
+    <div class="chips" id="modeChips"></div>
+    <h3 style="margin-top:14px">你走多远才发现走错了（纠正距离）</h3>
+    <div class="chips" id="kChips"></div>
+    <p class="note" id="kNote"></p>
+  </div>
+
+  <div class="cols">
+    <div class="mapbox">
+      <div id="map"></div>
+      <div class="legend">
+        <span><i style="background:#2563eb"></i>走错反而更快</span>
+        <span><i style="background:#94a3b8"></i>几乎无损失</span>
+        <span><i style="background:#f59e0b"></i>几百米</span>
+        <span><i style="background:#ea580c"></i>一公里上下</span>
+        <span><i style="background:#dc2626"></i>很要命</span>
+        <span><i style="background:#7f1d1d"></i>命运的岔口</span>
+      </div>
+      <p class="note">点地图上的圆点可以看这个弯的详情。圆越大、越红，错过它越亏。</p>
+    </div>
+
+    <div>
+      <div class="panel" id="fatalPanel"></div>
+      <div class="panel">
+        <h3>三种方式，同一段路</h3>
+        <div class="modes" id="modes"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>沿程代价剖面 · 这条路上每个弯值多少钱</h3>
+    <svg class="prof" id="prof" viewBox="0 0 900 300" preserveAspectRatio="xMidYMid meet"></svg>
+    <p class="note">横轴是行程进度，纵轴是「错过这个弯要多走的米数」。柱子落在零线以下，
+      说明这个弯走错了反而更近 —— 那是导航自己绕了路，不是你的错。</p>
+  </div>
+
+  <div class="panel">
+    <h3>全国排行 · 哪座城市最输不起（驾车，典型错过代价）</h3>
+    <div class="rank" id="rank"></div>
+  </div>
+
+  <div class="panel">
+    <h3>一年要赔多少时间</h3>
+    <div class="slider">
+      <span style="font-size:13px;color:var(--ink2)">一年走这条路</span>
+      <input type="range" id="trips" min="50" max="1000" step="50" value="500">
+      <b id="tripsV">500</b><span style="font-size:13px;color:var(--ink2)">趟</span>
+    </div>
+    <div class="slider" style="margin-top:10px">
+      <span style="font-size:13px;color:var(--ink2)">每个弯走错概率</span>
+      <input type="range" id="eps" min="0.2" max="8" step="0.2" value="2">
+      <b id="epsV">2%</b>
+    </div>
+    <div id="annual"></div>
+  </div>
+
+  <div class="panel">
+    <h3>这个数字是怎么算出来的</h3>
+    <table class="t">
+      <tr><th>环节</th><th>做法</th></tr>
+      <tr><td>路线</td><td>腾讯地图 WebService 驾车 / 骑行 / 步行路线规划，取真实折线与沿途转向。</td></tr>
+      <tr><td>找弯</td><td>对折线逐点算入向与出向的夹角，夹角 ≥ 20° 记为一次转弯，再按最小间隔抽样，每条路线取 2–6 个。</td></tr>
+      <tr><td>模拟走错</td><td>在该转没转的方向上，沿原行进方向再走 L 米，然后从那个错点重新规划到终点。</td></tr>
+      <tr><td>代价</td><td>代价 = L + 错点到终点的路程 − 正点到终点的路程。为负说明原路线在这里本来就绕了。</td></tr>
+      <tr><td>纠正距离 L</td><td>步行 20 米（转身就回来）、骑行 80 米（骑到路口掉头）、驾车 600 米（开到下一个允许掉头的路口）。页面上的三档按 0.33 / 1 / 2.5 同比缩放。</td></tr>
+      <tr><td>时间</td><td>代价米数 ÷ 该路线的平均速度（路程 ÷ 时长）。腾讯接口返回的时长是整分钟，直接用会引入 ±1 分钟量化误差，所以时间一律由里程换算。</td></tr>
+    </table>
+    <p class="note"><b>演示数据：</b>8 座城市 × 3 种方式，共 24 条真实路线、118 个弯、每弯 3 档纠正距离、约 500 次路线规划调用，
+      采样于 2026-10-18 凌晨（非实时路况）。地名均为真实地标，结论用于理解「一条路有多容错」，
+      <b>不能当作导航依据</b>，也不要用它判断具体某次出行会不会迟到。</p>
+  </div>
+
+  <p class="foot">
+    <b>一句话结论：</b>开车快，是因为它把路拉直了；也正因为路被拉直，一旦走错，你要绕回来的距离是走路时的几十倍。
+    开车不是更快，是<b>更输不起</b>。<br>
+    作品：错过 · THE MISS ｜ 作者：markzwang（王紫骥）｜ 2026-10 ｜ 数据源：腾讯地图 WebService
+  </p>
+</div>
+
+<script src="./data.js"></script>
+<script src="./model.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

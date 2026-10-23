@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>替身 · THE DOUBLE —— 和你常去的地方花一样时间的地方，你一个都没去过</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --ink:#151a22; --ink2:#4a5464; --ink3:#8892a0;
+  --line:#e3e7ed; --line2:#eef1f5; --accent:#c0392b; --accent2:#1f6feb;
+  --warm:#e8f1ff; --shadow:0 1px 2px rgba(20,28,40,.05),0 6px 20px rgba(20,28,40,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:14px; line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1240px;margin:0 auto;padding:20px 18px 40px}
+
+header.hd{margin-bottom:16px}
+.hd .kicker{font-size:12px;letter-spacing:.22em;color:var(--ink3);text-transform:uppercase}
+.hd h1{margin:4px 0 6px;font-size:27px;line-height:1.25;letter-spacing:-.01em;font-weight:700}
+.hd h1 .en{font-size:12px;letter-spacing:.18em;color:var(--ink3);font-weight:500;margin-left:10px;vertical-align:3px}
+.hd .sub{margin:0;color:var(--ink2);font-size:14px;max-width:820px}
+.hd .sub b{color:var(--ink);font-weight:600}
+
+.controls{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow);margin-bottom:14px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 0}
+.row + .row{border-top:1px dashed var(--line2)}
+.row .lab{font-size:12px;color:var(--ink3);min-width:96px;flex:0 0 auto}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{
+  border:1px solid var(--line);background:#fbfcfd;color:var(--ink2);
+  padding:5px 11px;border-radius:999px;font-size:13px;cursor:pointer;transition:.15s;
+  font-family:inherit;
+}
+.chip:hover{border-color:#c9d2de;color:var(--ink)}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.chip .t{font-size:11px;color:var(--ink3);margin-left:4px}
+.chip.on .t{color:#c3cbd6}
+select{
+  font-family:inherit;font-size:13px;padding:5px 9px;border:1px solid var(--line);
+  border-radius:8px;background:#fbfcfd;color:var(--ink);cursor:pointer;
+}
+.slider{display:flex;align-items:center;gap:10px}
+input[type=range]{width:260px;accent-color:var(--accent)}
+.slider .val{font-variant-numeric:tabular-nums;font-weight:700;font-size:15px;min-width:74px}
+.hint{font-size:12px;color:var(--ink3)}
+
+main.grid{display:grid;grid-template-columns:minmax(0,1.32fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:900px){ main.grid{grid-template-columns:minmax(0,1fr)} }
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.card .ch{padding:10px 14px;border-bottom:1px solid var(--line2);font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.card .ch .r{font-size:11px;color:var(--ink3);font-weight:400}
+
+#map{width:100%;height:468px;background:#eaeef3}
+.mapnote{padding:8px 14px;font-size:11.5px;color:var(--ink3);border-top:1px solid var(--line2)}
+
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line2)}
+.kpi{background:#fff;padding:12px 14px}
+.kpi .n{font-size:25px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.15}
+.kpi .n small{font-size:13px;font-weight:600;color:var(--ink2);margin-left:2px}
+.kpi .k{font-size:11.5px;color:var(--ink3);margin-top:2px}
+.kpi.hl .n{color:var(--accent)}
+.kpi.hl2 .n{color:var(--accent2)}
+
+.anchorbox{padding:11px 14px;border-bottom:1px solid var(--line2);background:#fbfcfd}
+.anchorbox .t{font-size:12px;color:var(--ink3)}
+.anchorbox .v{font-size:15px;font-weight:600;margin-top:2px}
+.anchorbox .v .m{color:var(--accent);font-variant-numeric:tabular-nums}
+.anchorbox .v .d{color:var(--ink3);font-weight:400;font-size:13px;margin-left:6px}
+
+.list{max-height:352px;overflow-y:auto}
+.catgrp{border-bottom:1px solid var(--line2)}
+.catgrp:last-child{border-bottom:0}
+.catgrp .ch2{padding:8px 14px;font-size:12px;font-weight:600;color:var(--ink2);display:flex;align-items:center;gap:7px;background:#fcfdfe;position:sticky;top:0}
+.catgrp .ch2 .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.catgrp .ch2 .c{color:var(--ink3);font-weight:400;margin-left:auto}
+.item{padding:7px 14px;display:flex;align-items:baseline;gap:10px;cursor:default}
+.item:hover{background:#f7f9fc}
+.item .nm{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .mt{font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums;flex:0 0 auto}
+.item .mt b{color:var(--ink2);font-weight:600}
+.item.near .nm::after{content:"更近";font-size:10px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:1px}
+.empty{padding:26px 16px;text-align:center;color:var(--ink3);font-size:13px}
+
+.rosewrap{padding:10px 14px;border-top:1px solid var(--line2)}
+.rosewrap .t{font-size:12px;color:var(--ink2);margin-bottom:4px}
+.rosewrap .t b{color:var(--ink)}
+#rose{width:100%;height:190px;display:block}
+
+section.compare{margin-top:14px}
+.cmpwrap{padding:8px 14px 14px}
+.bars{display:flex;flex-direction:column;gap:5px}
+.bar{display:grid;grid-template-columns:118px minmax(0,1fr) 60px;align-items:center;gap:9px;font-size:12px}
+.bar .nm{color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .tr{background:var(--line2);border-radius:4px;height:15px;position:relative;overflow:hidden}
+.bar .fl{position:absolute;left:0;top:0;bottom:0;background:var(--accent2);border-radius:4px}
+.bar .vv{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+.bar.me .nm{color:var(--accent);font-weight:700}
+.bar.me .fl{background:var(--accent)}
+
+.readout{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+.readout h3{margin:0 0 8px;font-size:14px}
+.readout p{margin:0 0 8px;color:var(--ink2);font-size:13.5px}
+.readout p b{color:var(--ink)}
+.readout .cnt{color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}
+.readout ul{margin:6px 0 0;padding-left:18px;color:var(--ink2);font-size:13px}
+.readout li{margin:3px 0}
+
+footer{margin-top:18px;padding-top:12px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink3);line-height:1.7}
+footer b{color:var(--ink2)}
+#err{display:none;margin:10px 0;padding:10px 12px;background:#fdecea;border:1px solid #f5c6c2;color:#8c2f22;border-radius:8px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hd">
+  <div class="kicker">图个好玩 · 地图大乱斗</div>
+  <h1>替身<span class="en">THE DOUBLE</span></h1>
+  <p class="sub">你常去的地方，有一堆<b>「替身」</b>：路上花的时间一模一样，你却一个都没去过。
+     地图只回答「到那儿要多久」，从不回答<b>「同样的时间还能到哪儿」</b>。</p>
+</header>
+
+<div id="err"></div>
+
+<div class="controls">
+  <div class="row">
+    <span class="lab">城市</span>
+    <div class="chips" id="cityChips"></div>
+  </div>
+  <div class="row">
+    <span class="lab">从哪儿出发</span>
+    <div class="chips" id="originChips"></div>
+  </div>
+  <div class="row">
+    <span class="lab">你常去的一类</span>
+    <select id="catSel"></select>
+    <span class="lab" style="min-width:auto">愿意花多久</span>
+    <div class="slider"><input type="range" id="tRange" min="10" max="60" step="1" value="20"><span class="val" id="tVal">20 分钟</span></div>
+    <span class="hint">等时窗口 ±2 分钟</span>
+  </div>
+</div>
+
+<main class="grid">
+
+  <section class="card">
+    <div class="ch"><span>等时带地图</span><span class="r" id="mapMeta"></span></div>
+    <div id="map"></div>
+    <div class="mapnote" id="mapNote">灰点是候选去处，彩色大点是与「你常去的地方」等时的替身，红色多边形是 T 分钟可达玫瑰。</div>
+  </section>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <section class="card">
+      <div class="ch"><span>薄片体检</span><span class="r" id="kpiMeta"></span></div>
+      <div class="kpis">
+        <div class="kpi hl"><div class="n" id="kN">–</div><div class="k">个替身（等时 · 异类）</div></div>
+        <div class="kpi hl2"><div class="n" id="kTh">–</div><div class="k">倍厚度（等时≠等距）</div></div>
+        <div class="kpi"><div class="n" id="kNear">–</div><div class="k">个替身比你常去的还近</div></div>
+        <div class="kpi"><div class="n" id="kSlice">–</div><div class="k">薄片率（你只用掉多少）</div></div>
+      </div>
+      <div class="anchorbox">
+        <div class="t">你常去的地方（锚点）</div>
+        <div class="v" id="anchorV">–</div>
+      </div>
+      <div class="list" id="list"></div>
+    </section>
+
+    <section class="card">
+      <div class="ch"><span>可达玫瑰</span><span class="r" id="roseMeta"></span></div>
+      <div class="rosewrap">
+        <div class="t" id="roseT">–</div>
+        <svg id="rose" viewBox="0 0 320 190" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+    </section>
+  </div>
+</main>
+
+<section class="card compare">
+  <div class="ch"><span>八城对比 · 每个出发点的替身数</span><span class="r">红条 = 当前选择</span></div>
+  <div class="cmpwrap"><div class="bars" id="bars"></div></div>
+</section>
+
+<div class="readout">
+  <h3>它在替你做哪个决定</h3>
+  <p>周末想换个地方，但不想多花路上时间。你打开地图，它只会回答「到某处要多久」——
+     于是你只能回到那几个<b>已经去过</b>的地方。这个页面反过来问：<b>同样的时间，还能到哪儿？</b></p>
+  <p id="roMain">–</p>
+  <ul id="roList"></ul>
+</div>
+
+<footer>
+  <b>数据说明</b>：8 座城市 × 3 类出发点（居住 / 办公 / 老城）× 每城 60–64 个真实 POI（公园 / 博物馆 / 商场 / 书店 / 体育馆 / 电影院 / 展览馆 / 景点），
+  共 <span id="fCount">–</span> 组真实驾车耗时，全部来自腾讯地图 WebService 距离矩阵（driving），
+  采集于 2026-10-19，为典型路况下的测算值，非实时路况。<br>
+  <b>口径</b>：替身 = 与锚点耗时差 ≤ 2 分钟且类别不同的去处；厚度 = 同一等时带内最远 / 最近的直线距离之比；
+  可达玫瑰只统计样本数 ≥ 2 的方位（只有 1 个点的方位由单点决定，会产生几十倍的假比值）。<br>
+  <b>反例</b>：杭州·临平（远郊居住区）在 20 分钟档内替身为 0 —— 住在那儿，20 分钟确实哪儿也去不了。这不是 bug，是结论。
+</footer>
+
+</div>
+
+<script src="https://map.qq.com/api/gljs?v=1.exp&key=CVIBZ-RDZCD-J3B4T-HGLIP-V7Z2F-EQB5N"></script>
+<script src="data.js"></script>
+<script src="model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
